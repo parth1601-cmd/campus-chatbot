@@ -1,0 +1,11 @@
+{
+  "name": "CampusAI — Zanzee College Chronicle & AI Platform",
+  "description": "An AI-powered university campus assistant, learning management system, and interactive editorial student portal for Zanzee College.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
