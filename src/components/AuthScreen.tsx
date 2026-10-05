@@ -40,7 +40,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
   return (
     <div className="min-h-screen bg-[#FBF9F5] text-[#1C1917] flex flex-col justify-between">
       {/* Editorial Broadsheet Masthead */}
-      <header className="border-b border-stone-300 bg-white px-6 py-3.5">
+      <header className="border-b border-stone-300 bg-white px-4 sm:px-6 py-3.5">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <KJCLogo variant="horizontal" size="sm" />
           <div className="text-xs font-mono text-stone-600 tabular-nums text-right">
@@ -360,7 +360,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
         </div>
       </main>
 
-      <footer className="border-t border-stone-300 bg-white px-6 py-4 text-xs text-stone-600">
+      <footer className="border-t border-stone-300 bg-white px-4 sm:px-6 py-4 text-xs text-stone-600">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div>© 2026 Kristu Jayanti Institute of Technology. All rights reserved.</div>
           <div>Protected by SAML 2.0 · FERPA Compliant · WCAG 2.2 AA Accessible</div>

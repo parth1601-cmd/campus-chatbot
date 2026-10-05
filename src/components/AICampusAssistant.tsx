@@ -183,6 +183,100 @@ function FormattedMessage({ text }: { text: string }) {
       continue;
     }
 
+    // Markdown table block: 2+ consecutive | ... | lines (header + rows).
+    // Rendered in a horizontally scrollable container so wide comparison
+    // tables never force page-level horizontal scrolling on phones.
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      const tableLines: string[] = [];
+      let j = i;
+      while (j < lines.length) {
+        const t = lines[j].trim();
+        if (!t.startsWith('|') || !t.endsWith('|')) break;
+        tableLines.push(t);
+        j++;
+      }
+      if (tableLines.length >= 2) {
+        const parseRow = (row: string) =>
+          row
+            .slice(1, -1)
+            .split('|')
+            .map((c) => c.trim());
+        const isSeparator = (row: string) => /^[:\-|\s]+$/.test(row);
+        const header = parseRow(tableLines[0]);
+        const startIdx = tableLines.length > 1 && isSeparator(tableLines[1]) ? 2 : 1;
+        const body = tableLines.slice(startIdx).map(parseRow);
+        const colCount = Math.max(header.length, ...body.map((r) => r.length), 1);
+        const norm = (r: string[]) => {
+          const copy = [...r];
+          while (copy.length < colCount) copy.push('');
+          return copy.slice(0, colCount);
+        };
+        elements.push(
+          <div key={`tbl-${i}`} className="my-3 -mx-1 overflow-x-auto rounded-lg border border-stone-300">
+            <table className="w-full min-w-[420px] border-collapse text-xs sm:text-[13px] leading-relaxed">
+              <thead>
+                <tr className="bg-[#EAE2D3]">
+                  {norm(header).map((cell, ci) => (
+                    <th
+                      key={ci}
+                      className="p-2 text-left font-bold text-stone-900 border-b-2 border-stone-400 border-r border-stone-300 last:border-r-0 break-words"
+                    >
+                      {renderInlineMarkdown(cell)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-200">
+                {body.map((row, ri) => (
+                  <tr key={ri} className={ri % 2 === 1 ? 'bg-stone-100/50' : undefined}>
+                    {norm(row).map((cell, ci) => (
+                      <td
+                        key={ci}
+                        className="p-2 text-stone-800 align-top border-r border-stone-200 last:border-r-0 break-words"
+                      >
+                        {renderInlineMarkdown(cell)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+        i = j - 1;
+        continue;
+      }
+      // Single |...| line: fall through to paragraph rendering below.
+    }
+
+    // Blockquote: consecutive lines starting with '>'
+    if (trimmed.startsWith('>')) {
+      const quoteLines: string[] = [];
+      let j = i;
+      while (j < lines.length && lines[j].trim().startsWith('>')) {
+        quoteLines.push(lines[j].trim().replace(/^>\s?/, ''));
+        j++;
+      }
+      elements.push(
+        <blockquote
+          key={`quote-${i}`}
+          className="my-2 border-l-4 border-[#1E3A8A] bg-stone-100/70 pl-3 pr-2 py-2 text-sm leading-relaxed text-stone-800 space-y-1"
+        >
+          {quoteLines.map((q, qi) => (
+            <p key={qi}>{renderInlineMarkdown(q)}</p>
+          ))}
+        </blockquote>
+      );
+      i = j - 1;
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      elements.push(<hr key={`hr-${i}`} className="my-3 border-stone-300" />);
+      continue;
+    }
+
     // Heading 1 (# ...)
     if (trimmed.startsWith('# ')) {
       elements.push(
@@ -259,22 +353,82 @@ function renderInlineMarkdown(text: string) {
   // Bold **text** and `code`
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
   return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
       return (
         <strong key={i} className="font-bold text-stone-950">
-          {part.slice(2, -2)}
+          {renderLinkified(part.slice(2, -2), `b-${i}`)}
         </strong>
       );
     }
-    if (part.startsWith('`') && part.endsWith('`')) {
+    if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
       return (
-        <code key={i} className="font-mono text-xs px-1.5 py-0.5 bg-stone-100 border border-stone-300 rounded text-stone-900 font-semibold">
+        <code key={i} className="font-mono text-xs px-1.5 py-0.5 bg-stone-100 border border-stone-300 rounded text-stone-900 font-semibold break-all">
           {part.slice(1, -1)}
         </code>
       );
     }
-    return part;
+    return <React.Fragment key={i}>{renderLinkified(part, `t-${i}`)}</React.Fragment>;
   });
+}
+
+/**
+ * Markdown links [text](url), images ![alt](src), and bare URLs inside a
+ * plain-text segment. Long URLs wrap (break-all) so they never force
+ * horizontal scrolling on narrow phones.
+ */
+function renderLinkified(text: string, keyPrefix: string): React.ReactNode[] {
+  const pattern = /(!\[[^\]]*\]\([^)\s]+\))|(\[[^\]]+\]\([^)\s]+\))|(https?:\/\/[^\s)<\]]+)/g;
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  let k = 0;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > last) out.push(text.slice(last, match.index));
+    const token = match[0];
+    if (token.startsWith('!')) {
+      const alt = token.slice(2, token.indexOf(']'));
+      const src = token.slice(token.indexOf('(') + 1, token.lastIndexOf(')'));
+      out.push(
+        <img
+          key={`${keyPrefix}-${k++}`}
+          src={src}
+          alt={alt}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="my-2 max-w-full h-auto rounded-lg border border-stone-300"
+        />
+      );
+    } else if (token.startsWith('[')) {
+      const label = token.slice(1, token.indexOf(']'));
+      const href = token.slice(token.indexOf('(') + 1, token.lastIndexOf(')'));
+      out.push(
+        <a
+          key={`${keyPrefix}-${k++}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#1E3A8A] underline underline-offset-2 break-words font-medium"
+        >
+          {label}
+        </a>
+      );
+    } else {
+      out.push(
+        <a
+          key={`${keyPrefix}-${k++}`}
+          href={token}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#1E3A8A] underline underline-offset-2 break-all"
+        >
+          {token}
+        </a>
+      );
+    }
+    last = match.index + token.length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
 }
 
 export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
@@ -493,12 +647,24 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
   };
 
   return (
-    <div className="h-[calc(100dvh-250px)] min-h-[380px] sm:h-[calc(100vh-140px)] sm:min-h-[600px] flex flex-col md:flex-row border-2 border-[#141210] bg-[#FBF9F5] shadow-[4px_4px_0px_#141210] overflow-hidden relative min-h-0">
+    <div className="h-[calc(100vh-250px)] h-[calc(100dvh-250px)] min-h-[380px] sm:h-[calc(100vh-140px)] sm:min-h-[600px] flex flex-col md:flex-row border-2 border-[#141210] bg-[#FBF9F5] shadow-[4px_4px_0px_#141210] overflow-hidden relative min-h-0">
       {/* ================================================================
-          CONVERSATION SIDEBAR
-         ================================================================ */}
+          CONVERSATION SIDEBAR (overlay drawer on mobile/tablet)
+          ================================================================ */}
       {isSidebarOpen && (
-        <aside className="absolute md:static z-20 h-full md:h-auto w-64 sm:w-72 max-w-[85vw] bg-[#EFE9DD] border-r-2 border-[#141210] flex flex-col justify-between shrink-0 shadow-[4px_0_0_rgba(0,0,0,0.15)] md:shadow-none">
+        <button
+          type="button"
+          aria-label="Close chat history"
+          onClick={() => setIsSidebarOpen(false)}
+          className="absolute inset-0 z-10 bg-black/40 cursor-default md:hidden"
+        />
+      )}
+      {isSidebarOpen && (
+        <aside
+          id="chat-history-panel"
+          aria-label="Chat history"
+          className="absolute md:static z-20 h-full md:h-auto w-64 sm:w-72 max-w-[85vw] bg-[#EFE9DD] border-r-2 border-[#141210] flex flex-col justify-between shrink-0 shadow-[4px_0_0_rgba(0,0,0,0.15)] md:shadow-none min-h-0"
+        >
           {/* Sidebar Top: New Chat Button & Conversation List */}
           <div className="p-3 flex-1 flex flex-col overflow-hidden min-h-0">
             <button
@@ -520,7 +686,10 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
                 return (
                   <div
                     key={conv.id}
-                    onClick={() => setActiveConversationId(conv.id)}
+                    onClick={() => {
+                      setActiveConversationId(conv.id);
+                      if (window.matchMedia('(max-width: 767px)').matches) setIsSidebarOpen(false);
+                    }}
                     className={`group relative p-2.5 rounded border text-left cursor-pointer transition-all ${
                       isActive
                         ? 'bg-white border-[#141210] shadow-[2px_2px_0px_#141210]'
@@ -537,8 +706,9 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleDeleteConversation(conv.id, e)}
-                        className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-red-700 transition-opacity p-1"
+                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 text-stone-400 hover:text-red-700 transition-opacity p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
                         title="Delete chat"
+                        aria-label={`Delete ${conv.title}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -588,7 +758,10 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
             <button
               type="button"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-1.5 text-stone-700 hover:text-stone-950 hover:bg-stone-200 border border-stone-400 bg-white transition-colors cursor-pointer"
+              aria-expanded={isSidebarOpen}
+              aria-controls="chat-history-panel"
+              aria-label={isSidebarOpen ? 'Hide chat history' : 'Show chat history'}
+              className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-stone-700 hover:text-stone-950 hover:bg-stone-200 border border-stone-400 bg-white transition-colors cursor-pointer"
               title={isSidebarOpen ? 'Hide Chat History' : 'Show Chat History'}
             >
               {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
@@ -617,7 +790,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
             <button
               type="button"
               onClick={handleStartNewChat}
-              className="px-2.5 py-1 text-xs font-mono font-medium text-stone-800 bg-white border border-[#141210] hover:bg-stone-100 transition-colors cursor-pointer flex items-center gap-1"
+              className="px-2.5 py-2 sm:py-1 min-h-[40px] sm:min-h-0 text-xs font-mono font-medium text-stone-800 bg-white border border-[#141210] hover:bg-stone-100 transition-colors cursor-pointer flex items-center gap-1"
             >
               <RotateCcw className="w-3 h-3" />
               <span className="hidden sm:inline">New Chat</span>
@@ -625,7 +798,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
             <button
               type="button"
               onClick={() => onNavigate('admissions')}
-              className="px-2.5 py-1 text-xs font-mono font-bold text-white bg-[#1E3A8A] hover:bg-[#141210] border border-[#141210] transition-colors cursor-pointer flex items-center gap-1"
+              className="px-2.5 py-2 sm:py-1 min-h-[40px] sm:min-h-0 text-xs font-mono font-bold text-white bg-[#1E3A8A] hover:bg-[#141210] border border-[#141210] transition-colors cursor-pointer flex items-center gap-1"
             >
               <GraduationCap className="w-3 h-3" />
               <span className="hidden min-[400px]:inline">Admissions</span>
@@ -639,7 +812,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
             /* ================================================================
                EMPTY STATE: WELCOME & PROMPT CHIPS
                ================================================================ */
-            <div className="py-8 max-w-2xl mx-auto text-center space-y-6 animate-fadeIn">
+            <div className="py-6 sm:py-8 px-1 max-w-2xl mx-auto text-center space-y-5 sm:space-y-6 animate-fadeIn">
               <div className="flex justify-center">
                 <div className="p-3 bg-[#F5F0E6] rounded-full border-2 border-[#141210] shadow-[2px_2px_0px_#141210]">
                   <KJCLogo variant="emblem" size="lg" />
@@ -647,7 +820,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
               </div>
 
               <div className="space-y-2">
-                <div className="inline-block font-mono text-[10px] uppercase tracking-widest text-stone-600 border border-stone-400 bg-[#F5F0E6] px-2.5 py-0.5">
+                <div className="inline-block max-w-full font-mono text-[10px] uppercase tracking-widest text-stone-600 border border-stone-400 bg-[#F5F0E6] px-2.5 py-0.5 break-words">
                   KRISTU JAYANTI INSTITUTE OF TECHNOLOGY
                 </div>
                 <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-950">
@@ -670,10 +843,10 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
                       key={idx}
                       type="button"
                       onClick={() => handleSendMessage(promptText)}
-                      className="p-3 bg-[#FAF8F5] hover:bg-[#F0ECE1] border border-stone-300 hover:border-[#141210] transition-all text-left text-xs text-stone-800 font-medium cursor-pointer shadow-sm hover:shadow"
+                      className="p-3 min-h-[44px] bg-[#FAF8F5] hover:bg-[#F0ECE1] border border-stone-300 hover:border-[#141210] transition-all text-left text-xs text-stone-800 font-medium cursor-pointer shadow-sm hover:shadow"
                     >
-                      <div className="flex items-center justify-between">
-                        <span>{promptText}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 break-words">{promptText}</span>
                         <ChevronRight className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                       </div>
                     </button>
@@ -691,25 +864,28 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
                 return (
                   <div
                     key={msg.id}
-                    className={`flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
+                    className={`flex items-start gap-2 sm:gap-3 min-w-0 ${isUser ? 'justify-end' : 'justify-start'}`}
                   >
                     {!isUser && (
-                      <div className="w-8 h-8 rounded-full border border-stone-800 bg-[#1E3A8A] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5 overflow-hidden">
+                      <div
+                        aria-hidden="true"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-stone-800 bg-[#1E3A8A] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5 overflow-hidden [&_svg]:w-full [&_svg]:h-full"
+                      >
                         <KJCLogo variant="emblem" size="sm" />
                       </div>
                     )}
 
                     <div
-                      className={`max-w-[calc(100%-3rem)] sm:max-w-[75%] min-w-0 break-words rounded-lg p-3 sm:p-4 text-sm leading-relaxed ${
+                      className={`max-w-[calc(100%-2.5rem)] sm:max-w-[75%] min-w-0 break-words rounded-lg p-3 sm:p-4 text-sm leading-relaxed ${
                         isUser
                           ? 'bg-[#141210] text-white border border-[#141210] shadow-[2px_2px_0px_#141210]'
                           : 'bg-[#FBF9F5] text-stone-900 border border-stone-300 shadow-[2px_2px_0px_rgba(0,0,0,0.05)]'
                       }`}
                     >
                       {isUser ? (
-                        <div className="whitespace-pre-wrap font-sans">{msg.text}</div>
+                        <div className="whitespace-pre-wrap font-sans [overflow-wrap:anywhere]">{msg.text}</div>
                       ) : (
-                        <div>
+                        <div className="ai-content-wrap">
                           <FormattedMessage text={msg.text} />
 
                           {/* Sources citation footer if present */}
@@ -755,12 +931,15 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
 
               {/* Loading Indicator */}
               {isLoading && (
-                <div className="flex items-start gap-3 justify-start">
-                  <div className="w-8 h-8 rounded-full border border-stone-800 bg-[#1E3A8A] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5 overflow-hidden">
+                <div className="flex items-start gap-2 sm:gap-3 justify-start min-w-0" role="status" aria-live="polite">
+                  <div
+                    aria-hidden="true"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-stone-800 bg-[#1E3A8A] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5 overflow-hidden [&_svg]:w-full [&_svg]:h-full"
+                  >
                     <KJCLogo variant="emblem" size="sm" />
                   </div>
-                  <div className="p-3 bg-[#FBF9F5] border border-stone-300 rounded-lg text-xs font-mono text-stone-600 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#1E3A8A] animate-pulse" />
+                  <div className="min-w-0 max-w-full p-3 bg-[#FBF9F5] border border-stone-300 rounded-lg text-xs font-mono text-stone-600 flex items-center gap-2 flex-wrap">
+                    <span className="w-2 h-2 rounded-full bg-[#1E3A8A] animate-pulse shrink-0" />
                     <span>Kristu Jayanti AI is thinking...</span>
                   </div>
                 </div>
@@ -777,7 +956,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
             - Clean single send button
             - No paperclip, no mic, no extra clutter
            ================================================================ */}
-        <div className="p-3 sm:p-4 bg-[#EAE2D3] border-t-2 border-[#141210] shrink-0">
+        <div className="p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[#EAE2D3] border-t-2 border-[#141210] shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -785,24 +964,31 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
             }}
             className="flex items-center gap-2 max-w-3xl mx-auto"
           >
+            <label htmlFor="campus-ai-input" className="sr-only">
+              Ask the Campus AI assistant
+            </label>
             <input
+              id="campus-ai-input"
               ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask to learn, solve, quiz or revise…"
-              className="min-w-0 flex-1 px-3 sm:px-4 py-2.5 text-sm bg-white border-2 border-[#141210] placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] shadow-[2px_2px_0px_#141210]"
+              autoComplete="off"
+              enterKeyHint="send"
+              className="min-w-0 flex-1 px-3 sm:px-4 py-2.5 text-base sm:text-sm bg-white border-2 border-[#141210] placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] shadow-[2px_2px_0px_#141210]"
               disabled={isLoading}
               autoFocus
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="shrink-0 px-3 sm:px-5 py-2.5 bg-[#141210] hover:bg-[#1E3A8A] text-white text-xs font-mono uppercase tracking-wider font-bold flex items-center gap-1.5 border-2 border-[#141210] transition-colors cursor-pointer disabled:opacity-50 shadow-[2px_2px_0px_#141210]"
+              aria-label="Send message"
+              className="shrink-0 min-h-[44px] px-3 sm:px-5 py-2.5 bg-[#141210] hover:bg-[#1E3A8A] text-white text-xs font-mono uppercase tracking-wider font-bold flex items-center gap-1.5 border-2 border-[#141210] transition-colors cursor-pointer disabled:opacity-50 shadow-[2px_2px_0px_#141210]"
               title="Send message"
             >
-              <span>Send</span>
-              <Send className="w-3.5 h-3.5" />
+              <span className="hidden min-[380px]:inline">Send</span>
+              <Send className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </form>
 

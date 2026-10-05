@@ -873,8 +873,8 @@ export const NotificationsAndSettingsView: React.FC<
           </h3>
 
           <div className="space-y-3 text-xs">
-            <label className="flex items-center justify-between py-2 border-b border-stone-200 cursor-pointer">
-              <div>
+            <label className="flex items-center justify-between gap-4 py-2 border-b border-stone-200 cursor-pointer">
+              <div className="min-w-0 flex-1">
                 <div className="font-semibold text-stone-900">Synchronize Multi-Channel Conversation History</div>
                 <div className="text-stone-600">Retain AI context across Web Chat, SMS, Email, and Mobile App</div>
               </div>
@@ -885,12 +885,12 @@ export const NotificationsAndSettingsView: React.FC<
                   setSaveHistory(e.target.checked);
                   onShowToast('Updated conversation history preference');
                 }}
-                className="accent-[#1E3A8A]"
+                className="accent-[#1E3A8A] w-5 h-5 shrink-0"
               />
             </label>
 
-            <label className="flex items-center justify-between py-2 border-b border-stone-200 cursor-pointer">
-              <div>
+            <label className="flex items-center justify-between gap-4 py-2 border-b border-stone-200 cursor-pointer">
+              <div className="min-w-0 flex-1">
                 <div className="font-semibold text-stone-900">Academic Degree Audit Personalization</div>
                 <div className="text-stone-600">Allow CampusAI to use enrolled courses & grades for Socratic tutoring</div>
               </div>
@@ -901,12 +901,12 @@ export const NotificationsAndSettingsView: React.FC<
                   setPersonalizeAI(e.target.checked);
                   onShowToast('Updated AI personalization setting');
                 }}
-                className="accent-[#1E3A8A]"
+                className="accent-[#1E3A8A] w-5 h-5 shrink-0"
               />
             </label>
 
-            <label className="flex items-center justify-between py-2 cursor-pointer">
-              <div>
+            <label className="flex items-center justify-between gap-4 py-2 cursor-pointer">
+              <div className="min-w-0 flex-1">
                 <div className="font-semibold text-stone-900">Enhanced Contrast & Screen Reader Annotations (WCAG 2.2 AA)</div>
                 <div className="text-stone-600">Enforce high-contrast editorial borders and ARIA live announcements</div>
               </div>
@@ -917,7 +917,7 @@ export const NotificationsAndSettingsView: React.FC<
                   setHighContrast(e.target.checked);
                   onShowToast('Updated accessibility mode');
                 }}
-                className="accent-[#1E3A8A]"
+                className="accent-[#1E3A8A] w-5 h-5 shrink-0"
               />
             </label>
           </div>

@@ -618,14 +618,14 @@ ${ASSIGNMENTS.map(
 
             {/* SECONDARY ANNOUNCEMENT DISPATCHES (2-COLUMN BROADSHEET SPLIT BELOW THE FOLD) */}
             <section className="space-y-4">
-              <div className="border-b-2 border-stone-900 pb-2 flex items-baseline justify-between gap-2">
+              <div className="border-b-2 border-stone-900 pb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <h2
                   style={{ fontFamily: 'var(--font-serif)' }}
-                  className="newspaper-section-header text-stone-950"
+                  className="newspaper-section-header text-stone-950 min-w-0"
                 >
                   Chronicle Announcements & Official Bulletins
                 </h2>
-                <span className="text-[11px] font-mono uppercase tracking-wider text-stone-600">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-stone-600 shrink-0">
                   VERIFIED UNIVERSITY DISPATCHES
                 </span>
               </div>

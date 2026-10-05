@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Bell,
@@ -9,6 +9,7 @@ import {
   Calendar,
   User,
   LogOut,
+  Menu,
 } from 'lucide-react';
 import { RoleMode, ViewId } from './types';
 import {
@@ -53,6 +54,22 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+
+  // Mobile/tablet nav drawer: close on Escape + lock background scroll while open.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [menuOpen]);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -136,6 +153,34 @@ export default function App() {
     { id: 'profile', label: '🔒 Privacy & Settings' },
   ];
 
+  const facultySidebarLinks: Array<{ id: ViewId; label: string }> = [
+    { id: 'faculty-dashboard', label: '👨‍🏫 Teacher & Study Console' },
+    { id: 'admin-dashboard', label: '🛡️ Administration Console' },
+    { id: 'admin-chronicle', label: '📰 Chronicle Editor' },
+    { id: 'dashboard', label: '📰 The Kristu Chronicle' },
+    { id: 'faculty-directory', label: '👥 Faculty Directory' },
+    { id: 'courses', label: '📖 Course LMS' },
+    { id: 'ai-assistant', label: '💬 AI Chatbot' },
+  ];
+
+  const adminSidebarLinks: Array<{ id: ViewId; label: string }> = [
+    { id: 'admin-dashboard', label: 'Admin Dashboard' },
+    { id: 'admin-chronicle', label: '📰 The Kristu Chronicle Editor' },
+    { id: 'faculty-dashboard', label: '👨‍🏫 Faculty Edition' },
+    { id: 'admin-ai', label: 'AI & RAG Knowledge' },
+    { id: 'admin-observability', label: 'Observability' },
+    { id: 'admin-compliance', label: 'Compliance (FERPA)' },
+    { id: 'admin-integrations', label: 'Integrations (LTI/SSO)' },
+  ];
+
+  const drawerLinks =
+    role === 'student' ? studentSidebarLinks : role === 'faculty' ? facultySidebarLinks : adminSidebarLinks;
+
+  const closeMenuAndNavigate = (view: ViewId, payload?: string) => {
+    setMenuOpen(false);
+    handleNavigate(view, payload);
+  };
+
   // Global Search Results
   const q = globalSearchQuery.trim().toLowerCase();
   const matchedCourses = q
@@ -160,33 +205,43 @@ export default function App() {
     <div className="min-h-screen bg-[#EAE2D3] text-[#141210] flex flex-col">
       {/* Strict 3-Zone Top Bar Contract */}
       <header className="sticky top-0 z-30 bg-[#F5F0E6] border-b-2 border-[#141210] px-4 sm:px-6 py-3 flex items-center justify-between gap-2 flex-wrap shadow-[0px_2px_0px_#141210]">
-        {/* Zone 1: Wordmark & Tagline with Official KJC Emblem */}
-        <div className="flex items-center gap-3">
+        {/* Zone 1: Menu + Wordmark & Tagline with Official KJC Emblem */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            aria-expanded={menuOpen}
+            aria-controls="site-nav-drawer"
+            aria-label="Open site navigation menu"
+            className="lg:hidden p-2 -ml-1 min-h-[40px] min-w-[40px] flex items-center justify-center text-stone-800 hover:bg-white border border-transparent hover:border-[#141210] transition-colors cursor-pointer"
+          >
+            <Menu className="w-5 h-5" aria-hidden="true" />
+          </button>
           <a
             href="#top"
             onClick={(e) => {
               e.preventDefault();
               handleNavigate('dashboard');
             }}
-            className="flex items-center gap-2.5 group cursor-pointer"
+            className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer min-w-0"
           >
             <KJCLogo variant="emblem" size="sm" />
-            <div>
-              <div className="font-serif text-lg font-bold tracking-tight text-stone-900 group-hover:text-[#1E3A8A] transition-colors leading-none flex items-center gap-1.5">
-                <span>The Kristu Chronicle</span>
-                <span className="text-[9px] bg-[#1E3A8A] text-white px-1.5 py-0.5 font-mono uppercase font-bold">
+            <div className="min-w-0">
+              <div className="font-serif text-base sm:text-lg font-bold tracking-tight text-stone-900 group-hover:text-[#1E3A8A] transition-colors leading-none flex items-center gap-1.5">
+                <span className="truncate">The Kristu Chronicle</span>
+                <span className="hidden min-[380px]:inline text-[9px] bg-[#1E3A8A] text-white px-1.5 py-0.5 font-mono uppercase font-bold shrink-0">
                   AI OS
                 </span>
               </div>
-              <div className="text-[10px] text-stone-600 font-mono tracking-tight hidden sm:block mt-0.5">
+              <div className="text-[10px] text-stone-600 font-mono tracking-tight hidden sm:block mt-0.5 truncate">
                 Kristu Jayanti College · Autonomous Bengaluru
               </div>
             </div>
           </a>
         </div>
 
-        {/* Zone 2: Clean single-line text navigation links */}
-        <nav className="hidden md:flex items-center gap-5 text-xs font-mono font-medium text-stone-700">
+        {/* Zone 2: Clean single-line text navigation links (desktop only; drawer serves tablet/mobile) */}
+        <nav className="hidden lg:flex items-center gap-5 text-xs font-mono font-medium text-stone-700" aria-label="Primary">
           <button
             type="button"
             onClick={() => {
@@ -290,9 +345,9 @@ export default function App() {
           <button
             type="button"
             onClick={() => setIsAuthenticated(false)}
-            className="px-3 py-1.5 text-xs font-mono font-bold text-white bg-[#141210] hover:bg-[#1E3A8A] border border-[#141210] transition-colors cursor-pointer whitespace-nowrap shadow-[1px_1px_0px_#141210]"
+            className="px-2 sm:px-3 py-1.5 min-h-[36px] text-[11px] sm:text-xs font-mono font-bold text-white bg-[#141210] hover:bg-[#1E3A8A] border border-[#141210] transition-colors cursor-pointer whitespace-nowrap shadow-[1px_1px_0px_#141210]"
           >
-            SSO Portal
+            SSO<span className="hidden min-[380px]:inline"> Portal</span>
           </button>
         </div>
       </header>
@@ -334,15 +389,7 @@ export default function App() {
               </nav>
             ) : role === 'faculty' ? (
               <nav className="space-y-1" aria-label="Faculty Navigation">
-                {[
-                  { id: 'faculty-dashboard', label: '👨‍🏫 Teacher & Study Console' },
-                  { id: 'admin-dashboard', label: '🛡️ Administration Console' },
-                  { id: 'admin-chronicle', label: '📰 Chronicle Editor' },
-                  { id: 'dashboard', label: '📰 The Kristu Chronicle' },
-                  { id: 'faculty-directory', label: '👥 Faculty Directory' },
-                  { id: 'courses', label: '📖 Course LMS' },
-                  { id: 'ai-assistant', label: '💬 AI Chatbot' },
-                ].map((item) => (
+                {facultySidebarLinks.map((item) => (
                   <button
                     key={item.id}
                     type="button"
@@ -359,15 +406,7 @@ export default function App() {
               </nav>
             ) : (
               <nav className="space-y-1" aria-label="Admin Navigation">
-                {[
-                  { id: 'admin-dashboard', label: 'Admin Dashboard' },
-                  { id: 'admin-chronicle', label: '📰 The Kristu Chronicle Editor' },
-                  { id: 'faculty-dashboard', label: '👨‍🏫 Faculty Edition' },
-                  { id: 'admin-ai', label: 'AI & RAG Knowledge' },
-                  { id: 'admin-observability', label: 'Observability' },
-                  { id: 'admin-compliance', label: 'Compliance (FERPA)' },
-                  { id: 'admin-integrations', label: 'Integrations (LTI/SSO)' },
-                ].map((item) => (
+                {adminSidebarLinks.map((item) => (
                   <button
                     key={item.id}
                     type="button"
@@ -578,9 +617,65 @@ export default function App() {
         </main>
       </div>
 
+      {/* Site Navigation Drawer (tablet + mobile): every section reachable */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Site navigation">
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={() => setMenuOpen(false)}
+            className="absolute inset-0 bg-black/50 cursor-default"
+          />
+          <div
+            id="site-nav-drawer"
+            className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-[#F5F0E6] border-r-2 border-[#141210] flex flex-col min-h-0 pb-[env(safe-area-inset-bottom)]"
+          >
+            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b-2 border-[#141210] shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <KJCLogo variant="emblem" size="sm" />
+                <span className="font-serif text-sm font-bold text-stone-900 truncate">
+                  {role === 'student' ? 'Student Portal & LMS' : role === 'faculty' ? 'Faculty Senate Desk' : 'Executive Governance'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                aria-label="Close navigation menu"
+                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-stone-600 hover:text-stone-950 hover:bg-white border border-transparent hover:border-[#141210] transition-colors cursor-pointer shrink-0"
+              >
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+            </div>
+            <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3" aria-label="Site sections">
+              <div className="space-y-0.5">
+                {drawerLinks.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => closeMenuAndNavigate(item.id)}
+                    aria-current={currentView === item.id ? 'page' : undefined}
+                    className={`w-full min-h-[44px] flex items-center text-left px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                      currentView === item.id
+                        ? 'bg-[#1E3A8A] text-white'
+                        : 'text-stone-700 hover:bg-[#FBF9F5] hover:text-stone-900'
+                    }`}
+                  >
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </nav>
+            <div className="p-3 border-t border-stone-300 shrink-0">
+              <div className="text-xs font-semibold text-stone-900 truncate">Parth Pimplapure</div>
+              <div className="text-[11px] text-stone-600 truncate">MCA · Division D · 26MCAD30</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Bottom Navigation (Home, AI, Courses, Calendar, Profile) */}
       <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-stone-300 grid grid-cols-5 py-2 px-1 sm:px-2 gap-1 overflow-hidden"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-stone-300 grid grid-cols-5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] px-1 sm:px-2 gap-1 overflow-hidden"
         aria-label="Mobile Navigation"
       >
         {[
@@ -599,7 +694,8 @@ export default function App() {
                 setRole('student');
                 handleNavigate(item.id as ViewId);
               }}
-              className={`flex flex-col items-center justify-center py-1 px-0.5 text-[10px] sm:text-[11px] font-medium truncate ${
+              aria-current={currentView === item.id ? 'page' : undefined}
+              className={`flex flex-col items-center justify-center py-1 px-0.5 min-h-[44px] text-[10px] sm:text-[11px] font-medium truncate ${
                 currentView === item.id ? 'text-[#1E3A8A]' : 'text-stone-600'
               }`}
             >
@@ -638,8 +734,8 @@ export default function App() {
                 autoFocus
                 value={globalSearchQuery}
                 onChange={(e) => setGlobalSearchQuery(e.target.value)}
-                placeholder="Search across courses, people, policies, library, events, or ask AI..."
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-[#FBF9F5] border border-stone-300 focus:border-[#1E3A8A] focus:outline-none"
+                placeholder="Search courses, people, policies, library…"
+                className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm bg-[#FBF9F5] border border-stone-300 focus:border-[#1E3A8A] focus:outline-none"
               />
             </div>
 

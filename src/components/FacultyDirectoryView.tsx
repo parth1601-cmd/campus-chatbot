@@ -92,20 +92,20 @@ export const FacultyDirectoryView: React.FC<FacultyDirectoryViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => onNavigate('admissions')}
-              className="px-3.5 py-2 bg-white hover:bg-stone-100 text-stone-900 text-xs font-mono font-bold uppercase tracking-wider border border-[#141210] transition-colors cursor-pointer shadow-[2px_2px_0px_#141210]"
+              className="px-3.5 py-2 min-h-[40px] bg-white hover:bg-stone-100 text-stone-900 text-xs font-mono font-bold uppercase tracking-wider border border-[#141210] transition-colors cursor-pointer shadow-[2px_2px_0px_#141210]"
             >
               Admissions 2026 →
             </button>
             <button
               type="button"
               onClick={() => onAskAI('Who are the prominent computer science professors and researchers at Kristu Jayanti Institute of Technology?')}
-              className="px-4 py-2 bg-[#141210] hover:bg-[#1E3A8A] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 border border-[#141210] shadow-[2px_2px_0px_#141210] transition-colors cursor-pointer"
+              className="px-4 py-2 min-h-[40px] bg-[#141210] hover:bg-[#1E3A8A] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 border border-[#141210] shadow-[2px_2px_0px_#141210] transition-colors cursor-pointer"
             >
-              <MessageSquare className="w-3.5 h-3.5" />
+              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
               <span>Ask AI About Faculty</span>
             </button>
           </div>

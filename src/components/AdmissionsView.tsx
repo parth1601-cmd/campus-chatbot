@@ -56,15 +56,15 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <a
               href={KJIT_ADMISSION_DATA.contact.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2 bg-[#141210] hover:bg-[#1E3A8A] text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 border border-[#141210] shadow-[2px_2px_0px_#141210] transition-colors cursor-pointer"
+              className="px-4 py-2 min-h-[40px] inline-flex items-center bg-[#141210] hover:bg-[#1E3A8A] text-white text-xs font-mono font-bold uppercase tracking-wider gap-1.5 border border-[#141210] shadow-[2px_2px_0px_#141210] transition-colors cursor-pointer"
             >
               <span>Official Admission Portal</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
             </a>
           </div>
         </div>
@@ -412,10 +412,10 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 text-xs font-mono text-stone-400 border-t border-stone-800 pt-3">
-          <div className="flex items-center gap-1.5">
-            <Mail className="w-3.5 h-3.5 text-stone-300" />
-            <span>{KJIT_ADMISSION_DATA.contact.admissionEmail}</span>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-mono text-stone-400 border-t border-stone-800 pt-3">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Mail className="w-3.5 h-3.5 text-stone-300 shrink-0" />
+            <span className="break-all">{KJIT_ADMISSION_DATA.contact.admissionEmail}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Phone className="w-3.5 h-3.5 text-stone-300" />
