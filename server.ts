@@ -33,10 +33,9 @@ function getOpenRouterConfig() {
   const raw = (process.env.OPENROUTER_API_KEY || '').trim();
   const apiKey = raw.replace(/^"|"$/g, '');
   if (!apiKey || apiKey.includes('YOUR_')) return null;
-  return {
-    apiKey,
-    model: ((process.env.OPENROUTER_MODEL || '').trim() || 'x-ai/grok-4.5').replace(/^"|"$/g, ''),
-  };
+  const model = (process.env.OPENROUTER_MODEL || '').trim().replace(/^"|"$/g, '');
+  if (!model) return null;
+  return { apiKey, model };
 }
 
 interface OpenRouterHistoryTurn {
@@ -114,10 +113,9 @@ function getGroqConfig() {
   const raw = (process.env.GROQ_API_KEY || '').trim();
   const apiKey = raw.replace(/^"|"$/g, '');
   if (!apiKey || apiKey.includes('YOUR_')) return null;
-  return {
-    apiKey,
-    model: ((process.env.GROQ_MODEL || '').trim() || 'openai/gpt-oss-120b').replace(/^"|"$/g, ''),
-  };
+  const model = (process.env.GROQ_MODEL || '').trim().replace(/^"|"$/g, '');
+  if (!model) return null;
+  return { apiKey, model };
 }
 
 /**
