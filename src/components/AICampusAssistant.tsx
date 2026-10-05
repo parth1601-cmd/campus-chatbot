@@ -493,14 +493,14 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
   };
 
   return (
-    <div className="h-[calc(100dvh-220px)] sm:h-[calc(100vh-140px)] min-h-[500px] sm:min-h-[600px] flex flex-col md:flex-row border-2 border-[#141210] bg-[#FBF9F5] shadow-[4px_4px_0px_#141210] overflow-hidden relative">
+    <div className="h-[calc(100dvh-250px)] min-h-[380px] sm:h-[calc(100vh-140px)] sm:min-h-[600px] flex flex-col md:flex-row border-2 border-[#141210] bg-[#FBF9F5] shadow-[4px_4px_0px_#141210] overflow-hidden relative min-h-0">
       {/* ================================================================
           CONVERSATION SIDEBAR
          ================================================================ */}
       {isSidebarOpen && (
         <aside className="absolute md:static z-20 h-full md:h-auto w-64 sm:w-72 max-w-[85vw] bg-[#EFE9DD] border-r-2 border-[#141210] flex flex-col justify-between shrink-0 shadow-[4px_0_0_rgba(0,0,0,0.15)] md:shadow-none">
           {/* Sidebar Top: New Chat Button & Conversation List */}
-          <div className="p-3 flex-1 flex flex-col overflow-hidden">
+          <div className="p-3 flex-1 flex flex-col overflow-hidden min-h-0">
             <button
               type="button"
               onClick={handleStartNewChat}
@@ -514,7 +514,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
               Chat History
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-1.5 pr-1">
               {conversations.map((conv) => {
                 const isActive = conv.id === activeConversationId;
                 return (
@@ -581,9 +581,9 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
       {/* ================================================================
           MAIN CHAT COMPONENT
          ================================================================ */}
-      <section className="flex-1 flex flex-col justify-between bg-white min-w-0">
+      <section className="flex-1 flex flex-col justify-between bg-white min-w-0 min-h-0">
         {/* Top Chat Header */}
-        <header className="px-3 sm:px-4 py-3 bg-[#EAE2D3] border-b-2 border-[#141210] flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+        <header className="px-3 sm:px-4 py-3 bg-[#EAE2D3] border-b-2 border-[#141210] flex items-center justify-between gap-2 sm:gap-3 flex-wrap shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
@@ -634,7 +634,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
         </header>
 
         {/* Message Viewport */}
-        <div className="flex-1 p-3 sm:p-6 space-y-4 overflow-y-auto min-w-0">
+        <div className="flex-1 min-h-0 min-w-0 p-3 sm:p-6 space-y-4 overflow-y-auto overscroll-contain touch-pan-y">
           {activeConversation.messages.length === 0 ? (
             /* ================================================================
                EMPTY STATE: WELCOME & PROMPT CHIPS
@@ -777,7 +777,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
             - Clean single send button
             - No paperclip, no mic, no extra clutter
            ================================================================ */}
-        <div className="p-3 sm:p-4 bg-[#EAE2D3] border-t-2 border-[#141210]">
+        <div className="p-3 sm:p-4 bg-[#EAE2D3] border-t-2 border-[#141210] shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();

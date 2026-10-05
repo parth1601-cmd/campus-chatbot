@@ -460,7 +460,7 @@ ${ASSIGNMENTS.map(
                   src={chronicle.heroStory?.imageUrl || ASSETS.kjuCampusMain}
                   alt={chronicle.heroStory?.headline || 'College fest on campus'}
                   referrerPolicy="no-referrer"
-                  className="w-full h-72 sm:h-80 object-cover newspaper-photo"
+                  className="w-full h-48 sm:h-72 lg:h-80 object-cover newspaper-photo"
                 />
                 <figcaption
                   style={{ fontFamily: 'var(--font-serif)' }}
@@ -550,7 +550,7 @@ ${ASSIGNMENTS.map(
                       <img
                         src={curPhoto?.imageUrl || ASSETS.kjuCampusMain}
                         alt={curPhoto?.title || 'Kristu Jayanti University Campus'}
-                        className="w-full h-64 sm:h-72 object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="w-full h-40 sm:h-64 lg:h-72 object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       {curPhoto?.highlight && (
                         <div className="absolute top-2 left-2 bg-[#141210]/85 text-white text-[10px] font-mono font-bold px-2 py-0.5 uppercase tracking-wider backdrop-blur-xs">
@@ -1706,7 +1706,7 @@ export const LiveLearningView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
               Binary Search Trees, In-Order Traversal & Structural Induction
             </h2>
 
-            <div className="bg-stone-900 text-white p-5 sm:p-8 flex flex-col justify-between h-64 relative overflow-hidden">
+            <div className="bg-stone-900 text-white p-4 sm:p-8 flex flex-col justify-between gap-4 min-h-[220px] sm:h-64 relative overflow-hidden">
               <img
                 src={ASSETS.courseCs}
                 alt="Lecture VOD Frame"
