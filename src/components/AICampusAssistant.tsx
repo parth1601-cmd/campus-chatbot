@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ChevronRight,
   ExternalLink,
+  X,
 } from 'lucide-react';
 import { ViewId } from '../types';
 import { STUDENT_PERSONA, KJIT_ADMISSION_DATA } from '../data/zanzeeData';
@@ -504,6 +505,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
     setConversations((prev) => [newConv, ...prev]);
     setActiveConversationId(newId);
     setInput('');
+    if (window.matchMedia('(max-width: 1023px)').matches) setIsSidebarOpen(false);
     setTimeout(() => inputRef.current?.focus(), 100);
     onShowToast('Started a new chat session');
   };
@@ -647,23 +649,23 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
   };
 
   return (
-    <div className="h-[calc(100vh-250px)] h-[calc(100dvh-250px)] min-h-[380px] sm:h-[calc(100vh-140px)] sm:min-h-[600px] flex flex-col md:flex-row border-2 border-[#141210] bg-[#FBF9F5] shadow-[4px_4px_0px_#141210] overflow-hidden relative min-h-0">
+    <div className="h-[calc(100vh-250px)] h-[calc(100dvh-250px)] min-h-[380px] sm:h-[calc(100vh-140px)] sm:min-h-[600px] flex flex-col lg:flex-row border-2 border-[#141210] bg-[#FBF9F5] shadow-[4px_4px_0px_#141210] overflow-hidden relative min-h-0">
       {/* ================================================================
-          CONVERSATION SIDEBAR (overlay drawer on mobile/tablet)
+          CONVERSATION SIDEBAR (overlay drawer below lg, docked panel on desktop)
           ================================================================ */}
       {isSidebarOpen && (
         <button
           type="button"
           aria-label="Close chat history"
           onClick={() => setIsSidebarOpen(false)}
-          className="absolute inset-0 z-10 bg-black/40 cursor-default md:hidden"
+          className="absolute inset-0 z-10 bg-black/40 cursor-default lg:hidden"
         />
       )}
       {isSidebarOpen && (
         <aside
           id="chat-history-panel"
           aria-label="Chat history"
-          className="absolute md:static z-20 h-full md:h-auto w-64 sm:w-72 max-w-[85vw] bg-[#EFE9DD] border-r-2 border-[#141210] flex flex-col justify-between shrink-0 shadow-[4px_0_0_rgba(0,0,0,0.15)] md:shadow-none min-h-0"
+          className="absolute lg:static z-20 h-full lg:h-auto w-64 sm:w-72 max-w-[85vw] bg-[#EFE9DD] border-r-2 border-[#141210] flex flex-col justify-between shrink-0 shadow-[4px_0_0_rgba(0,0,0,0.15)] lg:shadow-none min-h-0 animate-drawer-in lg:animate-none"
         >
           {/* Sidebar Top: New Chat Button & Conversation List */}
           <div className="p-3 flex-1 flex flex-col overflow-hidden min-h-0">
@@ -676,8 +678,18 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
               <span>New Chat</span>
             </button>
 
-            <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-stone-600 px-1 mb-2">
-              Chat History
+            <div className="flex items-center justify-between gap-2 px-1 mb-2">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-stone-600">
+                Chat History
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(false)}
+                aria-label="Close chat history panel"
+                className="lg:hidden p-1.5 min-h-[36px] min-w-[36px] flex items-center justify-center text-stone-500 hover:text-stone-950 hover:bg-stone-200/70 border border-transparent hover:border-stone-400 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-1.5 pr-1">
@@ -688,7 +700,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
                     key={conv.id}
                     onClick={() => {
                       setActiveConversationId(conv.id);
-                      if (window.matchMedia('(max-width: 767px)').matches) setIsSidebarOpen(false);
+                      if (window.matchMedia('(max-width: 1023px)').matches) setIsSidebarOpen(false);
                     }}
                     className={`group relative p-2.5 rounded border text-left cursor-pointer transition-all ${
                       isActive
@@ -706,7 +718,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleDeleteConversation(conv.id, e)}
-                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 text-stone-400 hover:text-red-700 transition-opacity p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
+                        className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100 text-stone-400 hover:text-red-700 transition-opacity p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
                         title="Delete chat"
                         aria-label={`Delete ${conv.title}`}
                       >
