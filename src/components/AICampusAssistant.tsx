@@ -20,6 +20,7 @@ import {
 import { ViewId } from '../types';
 import { STUDENT_PERSONA, KJIT_ADMISSION_DATA } from '../data/zanzeeData';
 import { KJCLogo } from './KJCLogo';
+import { apiFetch } from '../lib/api';
 
 interface ChatMessage {
   id: string;
@@ -430,7 +431,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
         text: m.text,
       }));
 
-      const res = await fetch('/api/ai/chat', {
+      const res = await apiFetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -440,7 +441,9 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
       });
 
       if (!res.ok) {
-        throw new Error('Server returned an error');
+        const body = await res.text().catch(() => '');
+        console.warn(`[CampusAI] POST /api/ai/chat failed: HTTP ${res.status}`, body.slice(0, 300));
+        throw new Error(`Server returned HTTP ${res.status}`);
       }
 
       const data = await res.json();
@@ -464,7 +467,8 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
             : c
         )
       );
-    } catch {
+    } catch (err) {
+      console.warn('[CampusAI] chat request failed. If deployed, set VITE_API_URL to the backend URL and add GROQ_API_KEY etc. in the host env dashboard:', err);
       const errorMessage: ChatMessage = {
         id: `ai-err-${Date.now()}`,
         sender: 'ai',

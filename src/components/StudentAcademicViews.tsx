@@ -49,6 +49,7 @@ import {
   type McaCourseCard,
 } from '../data/mcaSyllabus';
 import { KJCLogo } from './KJCLogo';
+import { apiFetch } from '../lib/api';
 
 /** Cover photo with graceful fallback to subject initials if the CDN image fails. */
 const McaCoverPhoto: React.FC<{ card: McaCourseCard; className?: string; alt: string }> = ({
@@ -932,7 +933,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
   const triggerCourseTutor = async (action: 'explain' | 'hint' | 'example' | 'quiz' | 'custom', customText?: string) => {
     setTutorLoading(true);
     try {
-      const res = await fetch('/api/ai/tutor', {
+      const res = await apiFetch('/api/ai/tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1346,7 +1347,7 @@ export const AITutorView: React.FC<SharedNavProps> = ({ onShowToast }) => {
     setHistory((prev) => [...prev, { role: 'student', content: labelForUser }]);
     setLoading(true);
     try {
-      const res = await fetch('/api/ai/tutor', {
+      const res = await apiFetch('/api/ai/tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2065,7 +2066,7 @@ export const AcademicProgressView: React.FC<SharedNavProps> = ({ onAskAI, onShow
   const handleReanalyzeWithAI = async () => {
     setIsReanalyzing(true);
     try {
-      const res = await fetch('/api/ai/course-recommendations', {
+      const res = await apiFetch('/api/ai/course-recommendations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

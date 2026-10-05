@@ -2821,6 +2821,20 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
   };
 }
 
+// GET /api/health — Deployment probe: verifies backend is reachable and which providers are configured (no secrets exposed)
+app.get('/api/health', (_req, res) => {
+  res.json({
+    ok: true,
+    service: 'CampusAI university server',
+    providers: {
+      groq: !!getGroqConfig(),
+      openrouter: !!getOpenRouterConfig(),
+      gemini: !!getGeminiClient(),
+      nonGroqFallback: NON_GROQ_FALLBACK_ENABLED,
+    },
+  });
+});
+
 // GET /api/ai/university-config — Returns official University Configuration per Master Prompt Section 1
 app.get('/api/ai/university-config', (req, res) => {
   res.json({
@@ -3383,7 +3397,8 @@ Return strictly a JSON array inside a \`\`\`json block.`;
 });
 
 async function startServer() {
-  const PORT = 3000;
+  // Hosting platforms (Render/Railway/Fly/Vercel) inject PORT — never hardcode 3000 in production.
+  const PORT = Number(process.env.PORT) || 3000;
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
@@ -3394,13 +3409,19 @@ async function startServer() {
   } else {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
+    // SPA fallback for non-API routes only. Must NOT swallow /api/* (otherwise
+    // frontend fetch() calls get index.html instead of JSON -> "university
+    // server" connection error). Regex form also works on Express 5.
+    app.get(/^(?!\/api).*/, (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Kristu Jayanti Institute of Technology CampusAI Server running on http://0.0.0.0:${PORT}`);
+    console.log(
+      `Providers — groq=${!!getGroqConfig()} openrouter=${!!getOpenRouterConfig()} gemini=${!!getGeminiClient()} nonGroqFallback=${NON_GROQ_FALLBACK_ENABLED}`,
+    );
   });
 }
 

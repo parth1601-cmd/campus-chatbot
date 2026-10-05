@@ -19,6 +19,7 @@ import {
   STUDENT_PERSONA,
   ASSETS,
 } from '../data/zanzeeData';
+import { apiFetch } from '../lib/api';
 
 // ============================================================================
 // 9. FINANCIAL AID & STUDENT BILLING / PAYMENTS CENTER
@@ -32,7 +33,7 @@ export const FinancialAidView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
   const handleUploadProof = async () => {
     setAnalyzingDoc(true);
     try {
-      const res = await fetch('/api/ai/analyze-doc', {
+      const res = await apiFetch('/api/ai/analyze-doc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

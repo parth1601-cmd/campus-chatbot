@@ -26,6 +26,7 @@ import {
   type PgProgramId,
 } from '../data/pgPrograms';
 import { AITutorView, AssignmentsView, GradesView } from './StudentAcademicViews';
+import { apiFetch } from '../lib/api';
 
 export interface MyCoursesNavProps {
   onNavigate: (view: ViewId, payload?: string) => void;
@@ -218,7 +219,7 @@ export const CoursesView: React.FC<MyCoursesNavProps & { selectedCourseId?: stri
   const triggerCourseTutor = async (action: 'explain' | 'hint' | 'example' | 'quiz' | 'custom', customText?: string) => {
     setTutorLoading(true);
     try {
-      const res = await fetch('/api/ai/tutor', {
+      const res = await apiFetch('/api/ai/tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
