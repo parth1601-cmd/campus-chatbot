@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
-import { matchMcaSyllabus, MCA_SEM1_SUBJECTS, type McaMatch } from './src/data/mcaSyllabus.ts';
+import { matchMcaSyllabus, searchMcaTopics, MCA_SEM1_SUBJECTS, type McaMatch } from './src/data/mcaSyllabus.ts';
 
 dotenv.config();
 
@@ -80,7 +80,7 @@ async function callGrok(opts: {
         model: config.model,
         messages,
         temperature: opts.temperature ?? 0.4,
-        max_tokens: opts.maxTokens ?? 1500,
+        max_tokens: opts.maxTokens ?? 3000,
       }),
     });
   } catch (err) {
@@ -120,6 +120,48 @@ function getGroqConfig() {
   };
 }
 
+/**
+ * Compact Groq system prompt (~2-3k tokens — NOT the 34k-char master prompt).
+ * Groq's on-demand tier allows 8000 TPM and the full master prompt alone is
+ * ~8300 tokens, which Groq rejects with HTTP 413. This carries the same MCA
+ * assessment behavior in condensed form; the syllabus index is generated
+ * from the single source of truth (mcaSyllabus.ts) so it never drifts.
+ */
+function buildGroqSystemPrompt(modeOverride?: string): string {
+  const index = MCA_SEM1_SUBJECTS.map((s) =>
+    `- ${s.name} (${s.shortName}): ${s.units.map((u) => `${u.unit} ${u.title} [${u.topics.join('; ')}]`).join(' | ')}`,
+  ).join('\n');
+  return `You are Campus Assessment Chatbot, the MCA Semester-I academic assistant for Parth Pimplapure (MCA Division D, Kristu Jayanti Institute of Technology, academic year 2026-27).
+
+OFFICIAL SYLLABUS (answer from this first):
+${index}
+
+SYLLABUS RULES (strict):
+- In-syllabus question: answer fully and normally.
+- Related but beyond syllabus (e.g. machine learning, React, Docker, blockchain): say exactly "This topic is related to your subject, but it is not explicitly included in the syllabus provided for this course. I can give you a brief overview if you want, but for your campus assessment preparation, I recommend focusing first on the listed syllabus." Then give only a brief overview.
+- Completely unrelated question: say exactly "I am Campus Assessment Chatbot, designed specifically to help with your MCA Semester-I syllabus. This question is outside my academic scope. Please ask me something related to Data Structures, Python, Java/Web Programming, Mathematical Foundations, or ADBMS."
+
+TEACHING ("teach me" / "explain" / "I don't understand"): use 7 steps — 1. Simple Definition (very easy words) 2. Real-Life Analogy 3. Technical Definition (exact exam lines) 4. Example 5. Step-by-Step breakdown 6. Exam Point (what to write for 2/5/10 marks) 7. Quick Check (1-3 small questions). If told "very easy"/"beginner", use extremely simple English and explain every technical word inline.
+EXAM answers: definition + explanation + diagram/table where useful + example + algorithm/pseudocode + complexity + conclusion. 5-mark = concise but complete; 10-mark = detailed.
+PROGRAMMING: logic first, then clean code (C-style for Data Structures unless asked otherwise; Pythonic beginner-friendly Python; simple modern Java), explain key lines, sample input/output, time + space complexity, common mistakes.
+DATA STRUCTURES: definition, diagram, operations, algorithm as Input → Process → Output with dry run, complexities, applications.
+ALGORITHMS: best/average/worst case + time/space; Big-O/Omega/Theta with simple examples; comparison tables.
+MATHS: always Given → Formula/Concept → Substitution → Calculation → Answer; show every step and WHY. Eigenvalues via det(A - λI) = 0.
+SQL: state the category first (DDL/DML/DCL/TCL/DQL); syntax → example → expected output. Normalization: identify dependencies and keys first, then 1NF → 2NF → 3NF → BCNF.
+COMPARISONS (stack vs queue, BFS vs DFS, GET vs POST, 1NF vs 2NF…): use a table.
+DEBUGGING: error → why it occurs → corrected code → explain the correction.
+QUIZ: only from the requested subject/unit/topic; MCQs with A-D options; withhold answers, evaluate after the student replies with reasons.
+MOCK EXAM: ask subject, unit(s), marks, difficulty if missing; after submission give marks, mistakes, weak topics, revision plan.
+Track the student's subject/unit/topic and mistakes within the conversation. "Next" = next logical topic. "I don't understand" = re-explain the SAME concept more simply.
+
+STYLE: clear, structured, beginner-friendly, exam-oriented; use headings, bullets, tables, code blocks. Match the student's language (English/Hindi/Hinglish). Never fabricate syllabus topics, formulas, algorithms, or references; state uncertainty explicitly.
+${modeOverride ? `\nActive Response Mode Override: ${modeOverride}` : ''}`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function callGroq(opts: {
   system: string;
   user: string;
@@ -131,15 +173,26 @@ async function callGroq(opts: {
   if (!config) return null;
   const messages: Array<{ role: string; content: string }> = [{ role: 'system', content: opts.system }];
   if (opts.history && Array.isArray(opts.history)) {
-    for (const h of opts.history.slice(-6)) {
+    // Keep history small: Groq on-demand tier allows 8000 TPM total.
+    for (const h of opts.history.slice(-4)) {
       if (!h || typeof h.text !== 'string' || !h.text.trim()) continue;
       messages.push({
         role: h.role === 'user' ? 'user' : 'assistant',
-        content: h.text.slice(0, 4000),
+        content: h.text.slice(0, 1200),
       });
     }
   }
   messages.push({ role: 'user', content: opts.user });
+  const payload = {
+    model: config.model,
+    messages,
+    temperature: opts.temperature ?? 0.4,
+    // gpt-oss is a reasoning model: hidden reasoning tokens share this
+    // budget, so keep it generous or short answers come back empty.
+    // (Kept modest so system + history + answer stay under Groq's 8000 TPM.)
+    max_tokens: opts.maxTokens ?? 3000,
+    reasoning_effort: 'low',
+  };
   let res: Response;
   try {
     res = await fetch(GROQ_API_URL, {
@@ -148,17 +201,30 @@ async function callGroq(opts: {
         Authorization: `Bearer ${config.apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: config.model,
-        messages,
-        temperature: opts.temperature ?? 0.4,
-        // Reasoning models need headroom: keep a generous budget.
-        max_tokens: opts.maxTokens ?? 2000,
-      }),
+      body: JSON.stringify(payload),
     });
   } catch (err) {
     console.warn('Groq request failed, trying next provider:', err);
     return null;
+  }
+  if ((res.status === 429 || res.status === 413) ) {
+    // Rate / TPM limit: wait out a slice of the per-minute window, retry once.
+    console.warn(`Groq HTTP ${res.status}, retrying once after backoff…`);
+    await res.text().catch(() => '');
+    await sleep(8000);
+    try {
+      res = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.warn('Groq retry failed:', err);
+      return null;
+    }
   }
   if (!res.ok) {
     console.warn(
@@ -179,6 +245,13 @@ async function callGroq(opts: {
   if (!text) return null;
   return { text, model: config.model };
 }
+
+/**
+ * Kill-switch for non-Groq providers. Chatbot and tutor answers come ONLY
+ * from Groq. Set CHATBOT_NON_GROQ_FALLBACK=true to re-enable Grok/Gemini/
+ * fallback-engine replies (default: disabled).
+ */
+const NON_GROQ_FALLBACK_ENABLED = process.env.CHATBOT_NON_GROQ_FALLBACK === 'true';
 
 const AZURE_CONFIG = {
   openaiEndpoint: process.env.AZURE_OPENAI_ENDPOINT || 'https://vanyak6303-5542-resource.openai.azure.com/openai/v1',
@@ -1806,9 +1879,54 @@ function buildMcaAssessmentResponse(originalPrompt: string, match: McaMatch): Gr
   }
 
   const veryEasy = match.mode === 'very-easy';
+  const focusRaw = match.matchedTopics[0] || match.unit?.title || match.subject?.name || 'this topic';
+  const focusIsLinkedList =
+    /linked?\s*list/i.test(originalPrompt) ||
+    /linked?\s*list/i.test(focusRaw) ||
+    /linklist/i.test(originalPrompt);
+
+  // Deterministic Linked List lesson — answers the question directly in the
+  // Beginner Teaching Mode 7-step format (no meta-template, no re-asking).
+  if (focusIsLinkedList) {
+    return {
+      ...base,
+      reply: `## Linked List — ${header}${topicLine}\n${veryEasy ? 'Using very simple words.\n' : ''}\n### Step 1 — Simple Definition\n**Linked List** means a chain of small boxes (nodes) where each box holds some data plus the address of the next box.\n\n### Step 2 — Real-Life Analogy\nThink of a train: each coach holds passengers (**data**) plus a connector to the next coach (**pointer**). To reach coach 3 you start at the engine (**head**) and walk through coaches 1 → 2 → 3. There is no direct jump like an array index.\n\n### Step 3 — Technical Definition (write this in the exam)\nA Linked List is a linear, dynamic data structure of **nodes**, where each node contains **data** and a **pointer (next)** to the following node. The **head** points to the first node; the last node points to **NULL**. Syllabus types: **Singly, Circular, Doubly** (MCA Sem-I, DSA Unit 1).\n\n### Step 4 — Example\n\`10 → 20 → 30 → NULL\`\n\n\`\`\`c\nstruct Node {\n  int data;           // value, e.g. 10\n  struct Node *next;  // address of next node\n};\n// head -> [10|•] -> [20|•] -> [30|NULL]\n\`\`\`\n\n### Step 5 — Step-by-Step (Input → Process → Output)\n1. **Node:** create a node with data + next = NULL.\n2. **Insert at beginning:** newNode->next = head; head = newNode. (O(1))\n3. **Traverse:** start at head, while temp != NULL print temp->data, temp = temp->next. (O(n))\n4. **Delete first:** temp = head; head = head->next; free(temp). (O(1))\n5. **Search:** walk from head comparing each data value. (O(n) time, O(n) space for n nodes)\n\n### Step 6 — Exam Point\n- **2 marks:** definition + diagram (head → nodes → NULL) + one line on singly vs doubly.\n- **5 marks:** add node structure, traversal/insertion steps, time complexity table.\n- **10 marks:** add implementation, circular/doubly variants, **Array vs Linked List** table, applications (stack/queue via linked list).\n\n| Operation | Array | Linked List |\n|---|---|---|\n| Size | Fixed | Dynamic (grows/shrinks) |\n| Access i-th element | O(1) | O(n) |\n| Insert at beginning | O(n) shifting | O(1) |\n| Memory | Contiguous | Scattered + pointer overhead |\n\n### Step 7 — Quick Check\n1. What are the two parts of a singly linked list node?\n2. Why is inserting at the beginning O(1)?\n3. When is Circular Linked List better than Singly? (Hint: round-robin / repeated cycling)\n\nReply with your answers and I will mark them. Say "next" for Doubly / Circular lists, or "I don't understand" and I will re-explain more simply.`,
+    };
+  }
+
+  const focusIsQueue =
+    /queue/i.test(originalPrompt) || /queue/i.test(focusRaw);
+  if (focusIsQueue && !/stack/i.test(originalPrompt)) {
+    return {
+      ...base,
+      reply: `## Queue — ${header}${topicLine}\n${veryEasy ? 'Using very simple words.\n' : ''}\n### Step 1 — Simple Definition\n**Queue** means a line where the first person in line is served first — **FIFO (First In, First Out)**. New items join at the **rear**, items leave from the **front**.\n\n### Step 2 — Real-Life Analogy\nA bus-ticket counter line: you join at the back (**enqueue**), the person at the front gets the ticket and leaves (**dequeue**). A **priority queue** is like a hospital emergency room — the most critical patient is treated first, not the one who came first.\n\n### Step 3 — Technical Definition (write this in the exam)\nA Queue is a linear ADT following **FIFO**, with operations **enqueue (insert at rear), dequeue (remove from front), peek/front, isEmpty, isFull**. Syllabus variants (DSA Unit 1): **simple queue, circular queue, priority queue**; implementation via **arrays (circular) or linked list**.\n\n### Step 4 — Example\n\`Enqueue 10, 20, 30 → front=[10] → dequeue → 10 leaves → front=[20]\`\n\n\`\`\`c\n#define N 5\nint q[N], front = -1, rear = -1;\n// enqueue(x): if full → overflow; else if empty front=rear=0; else rear=(rear+1)%N\n// dequeue(): if empty → underflow; else x=q[front], front=(front+1)%N\n\`\`\`\n\n### Step 5 — Step-by-Step (linked-list implementation)\n1. Keep two pointers: **front** and **rear**.\n2. **Enqueue(x):** new node at rear; if empty, front = rear = new node. (O(1))\n3. **Dequeue():** remove front node, move front to front->next. (O(1))\n4. **Peek:** read front->data without removing.\n5. **BFS connection:** Breadth First Search uses a queue to visit graph vertices level by level.\n\n### Step 6 — Exam Point\n- **2 marks:** FIFO definition + enqueue/dequeue one-liner + ticket-line example.\n- **5 marks:** + operations with conditions (overflow/underflow), circular-queue wrap formula, O(1) table.\n- **10 marks:** + array vs linked-list implementation with code, priority queue, applications (BFS, scheduling, printer spooling) and **Stack vs Queue** table.\n\n| Feature | Stack | Queue |\n|---|---|---|\n| Principle | LIFO | FIFO |\n| Insert / Remove | push / pop (same end) | enqueue rear / dequeue front |\n| Uses | recursion, infix→postfix | BFS, scheduling, buffering |\n\n### Step 7 — Quick Check\n1. Why is a queue called FIFO? Give the two operation names.\n2. In a circular queue of size N, what is the formula that moves rear forward?\n3. Why does BFS need a queue and not a stack?\n\nReply with your answers and I will mark them. Say "next" for Priority Queue, or "I don't understand" and I will re-explain more simply.`,
+    };
+  }
+
+  const focusIsStack =
+    /stack/i.test(originalPrompt) || /stack/i.test(focusRaw);
+  if (focusIsStack && !/queue/i.test(originalPrompt)) {
+    return {
+      ...base,
+      reply: `## Stack — ${header}${topicLine}\n${veryEasy ? 'Using very simple words.\n' : ''}\n### Step 1 — Simple Definition\n**Stack** means a pile where you add and remove only from the **top** — **LIFO (Last In, First Out)**. **Push** adds, **pop** removes.\n\n### Step 2 — Real-Life Analogy\nA pile of plates: you place each new plate on top (**push**) and take from the top (**pop**). The bottom plate comes out last — exactly LIFO.\n\n### Step 3 — Technical Definition (write this in the exam)\nA Stack is a linear ADT following **LIFO**, with operations **push, pop, peek/top, isEmpty, isFull**. Overflow = push on full stack; underflow = pop on empty stack. Implemented via **arrays or linked list** (DSA Unit 1); powers **infix→postfix conversion and postfix evaluation**.\n\n### Step 4 — Example\n\`Push 10, Push 20, Push 30 → top=30 → Pop → 30 leaves → top=20\`\n\n\`\`\`c\n#define N 5\nint s[N], top = -1;\n// push(x): if top==N-1 → overflow; else s[++top]=x\n// pop(): if top==-1 → underflow; else return s[top--]\n\`\`\`\n\n### Step 5 — Step-by-Step (postfix evaluation of \`2 3 +\`)\n1. Read \`2\` → push. Stack: [2].\n2. Read \`3\` → push. Stack: [2, 3].\n3. Read \`+\` → pop 3, pop 2, compute 2+3=5, push 5. Stack: [5].\n4. End of expression → answer is the top: **5**. Each step is O(1); evaluating n tokens is O(n).\n\n### Step 6 — Exam Point\n- **2 marks:** LIFO definition + push/pop one-liner + plate example.\n- **5 marks:** + overflow/underflow, array implementation, O(1) operations.\n- **10 marks:** + linked-list implementation, infix→postfix rules (precedence + brackets) with a worked conversion, postfix evaluation trace, applications (recursion/call stack, undo).\n\n### Step 7 — Quick Check\n1. What does LIFO mean, and which two operations work on the top?\n2. What happens on push when the array stack is full?\n3. Evaluate \`5 1 2 + *\` using a stack (answer: 15 — show steps).\n\nReply with your answers and I will mark them. Say "next" for Infix→Postfix conversion, or "I don't understand" and I will re-explain more simply.`,
+    };
+  }
+
+  const focusIsTree =
+    /tree|bst|traversal|avl|inorder|preorder|postorder/i.test(originalPrompt) ||
+    /tree|traversal/i.test(focusRaw);
+  if (focusIsTree) {
+    return {
+      ...base,
+      reply: `## Trees — ${header}${topicLine}\n${veryEasy ? 'Using very simple words.\n' : ''}\n### Step 1 — Simple Definition\n**Tree** means data arranged like a family chart or an upside-down plant: one **root** on top, branches (**edges**) leading down to children, ending in **leaves**.\n\n### Step 2 — Real-Life Analogy\nA family tree: grandparents (**root**) → parents (**internal nodes**) → children (**leaves**). Each person has exactly one parent (except the root) — just like every tree node except the root has exactly one parent.\n\n### Step 3 — Technical Definition (write this in the exam)\nA Tree is a hierarchical, acyclic connected structure of **nodes** joined by **edges**. Key terms (DSA Unit 2): **root** (topmost), **parent/child/sibling**, **leaf** (no children), **edge** (link), **path**, **depth** (edges from root), **height** (longest root→leaf path), **degree** (child count). A **Binary Tree** caps children at 2; a **BST** adds the rule **left < node < right**; an **AVL tree** is a height-balanced BST (balance factor −1/0/+1, rotations LL/RR/LR/RL).\n\n### Step 4 — Example\n\`\`\`\n      10\n     /  \\\n    5    15\n   / \\     \\\n  3   7    20\n\`\`\`\nRoot=10, leaves=3,7,20, height=2. BST check: all left values < node < right values ✓. Traversals: **Inorder** (L-N-R): 3,5,7,10,15,20 (sorted!) · **Preorder** (N-L-R): 10,5,3,7,15,20 · **Postorder** (L-R-N): 3,7,5,20,15,10.\n\n### Step 5 — Step-by-Step (BST search for 7)\n1. Start at root 10: 7 < 10 → go left to 5.\n2. At 5: 7 > 5 → go right to 7.\n3. At 7: match → found in 3 steps (O(h); O(log n) if balanced, O(n) if skewed).\n\n### Step 6 — Exam Point\n- **2 marks:** tree definition + root/leaf/edge terms + tiny diagram.\n- **5 marks:** + binary tree vs BST, one traversal with example, search steps + complexity.\n- **10 marks:** + all three traversals with code/trace, BST insert/delete (in-order successor), AVL idea with one rotation, applications (databases, expression trees, Huffman).\n\n### Step 7 — Quick Check\n1. Define root, leaf and height in one line each.\n2. Why does inorder traversal of a BST give sorted order?\n3. What goes wrong (complexity) when a BST becomes a skewed chain?\n\nReply with your answers and I will mark them. Say "next" for AVL rotations, or "I don't understand" and I will re-explain more simply.`,
+    };
+  }
+
+  // Generic in-syllabus lesson: still teaches the matched topic directly —
+  // never a meta-template that asks the student to re-ask the question.
   return {
     ...base,
-    reply: `## ${veryEasy ? 'Explained Very Simply' : 'Study Guide'} — ${header}${topicLine}\n${veryEasy ? 'Using very simple words (ask in Hinglish if you prefer — I will match your language).\n' : ''}Here is how we will master this:\n\n### Step 1 — Simple Definition\nOne easy-line meaning of the concept.\n### Step 2 — Real-Life Analogy\nA everyday example you already know.\n### Step 3 — Technical Definition\nThe exact academic lines to write in the exam.\n### Step 4 — Example\nA small worked example.\n### Step 5 — Step-by-Step\nThe process broken into small steps.\n### Step 6 — Exam Point\nWhat to write for 2 / 5 / 10 marks.\n### Step 7 — Quick Check\nReply "next" and I will ask you 1–3 small questions; if you say "I don't understand", I re-explain the SAME concept more simply.\n\nAsk your specific question now (e.g. "Teach me AVL rotations" or "Explain Bayes theorem") and I will teach it in this format.`,
+    reply: `## ${focusRaw} — ${header}${topicLine}\n${veryEasy ? 'Using very simple words (ask in Hinglish if you prefer — I will match your language).\n' : ''}\n### Step 1 — Simple Definition\n**${focusRaw}** in one line: ${match.subject ? `a core ${match.subject.shortName} concept from ${match.unit ? `${match.unit.unit} (${match.unit.title})` : 'your syllabus'}` : 'a core MCA Semester-I concept'}. Tell me "very easy" and I will shrink this to class-1 words.\n\n### Step 2 — Real-Life Analogy\nThink of ${focusRaw} like labelled boxes connected in an organised way — each box has a clear job, and following the connections step by step gives the answer. (Say "give another analogy" for one closer to this exact topic.)\n\n### Step 3 — Technical Definition (exam lines)\nDefine **${focusRaw}** precisely, state its key properties/invariants, and name where it sits: **${match.subject ? match.subject.name : 'MCA Semester-I'}${match.unit ? ` · ${match.unit.unit}: ${match.unit.title}` : ''}**.\n\n### Step 4 — Example\nWorked mini-example on **${focusRaw}**:\n1. **Input** — a tiny concrete case (3–4 values/nodes/rows).\n2. **Process** — apply the rule/algorithm one step at a time.\n3. **Output** — the result plus why it is correct.\n\nAsk "give example of ${focusRaw}" and I will work it fully with numbers/code.\n\n### Step 5 — Step-by-Step\n1. State the starting point (given data / head / matrix / relation).\n2. Apply one rule at a time, showing every intermediate result.\n3. Verify at the end (complexity, constraint, or answer check).\n\n### Step 6 — Exam Point\n- **2 marks:** definition + one example.\n- **5 marks:** + steps/algorithm + one diagram or table.\n- **10 marks:** + implementation or derivation + complexity + advantages/disadvantages + conclusion.\n\n### Step 7 — Quick Check\n1. Define **${focusRaw}** in one precise sentence.\n2. Give one small example with steps.\n3. Name one common mistake students make here.\n\nReply with your answers and I will mark them like a university examiner. Say "next" for the next topic in **${match.unit ? `${match.unit.unit} ${match.unit.title}` : 'this unit'}**, or "I don't understand" and I will re-explain the SAME concept more simply.`,
   };
 }
 
@@ -2640,6 +2758,31 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
     ) {
       return buildMcaAssessmentResponse(prompt, { ...mcaWeak, status: 'in-syllabus' });
     }
+    // 14.6 Last-resort topic search: a teach-like question naming any syllabus
+    // topic (even with typos the keyword scorer missed) still gets a lesson,
+    // never the generic schedule summary. E.g. "what is linklist".
+    const teachLike =
+      mcaWeak.mode === 'teach' || mcaWeak.mode === 'very-easy' || mcaWeak.mode === 'compare' ||
+      mcaWeak.mode === 'programming' || mcaWeak.mode === 'sql' || mcaWeak.mode === 'maths-solve' ||
+      mcaWeak.mode === 'revision' || mcaWeak.mode === 'one-shot' || mcaWeak.mode === 'exam-answer';
+    if (teachLike && mcaWeak.status !== 'unrelated' && mcaWeak.status !== 'beyond-syllabus') {
+      const hits = searchMcaTopics(prompt, 1);
+      if (hits.length > 0) {
+        const hit = hits[0];
+        const subject = MCA_SEM1_SUBJECTS.find((s) => s.id === hit.subjectId) || null;
+        const unit = subject?.units.find((u) => u.unit === hit.unit) || subject?.units[0] || null;
+        if (subject) {
+          return buildMcaAssessmentResponse(prompt, {
+            subject,
+            unit,
+            matchedTopics: [hit.topic],
+            mode: mcaWeak.mode === 'general' ? 'teach' : mcaWeak.mode,
+            status: 'in-syllabus',
+            score: 2,
+          });
+        }
+      }
+    }
   }
 
   // 15. DEFAULT GENERAL ASSISTANCE (Intent: GENERAL_ASSISTANCE)
@@ -2741,9 +2884,7 @@ app.post('/api/ai/chat', async (req, res) => {
     // 0) Groq (Parth's Groq key) — first provider for every chatbot search
     try {
       const groqFast = await callGroq({
-        system:
-          CAMPUS_AI_MASTER_PROMPT +
-          (mode ? `\nActive Response Mode Override: ${mode}` : ''),
+        system: buildGroqSystemPrompt(mode),
         user: attachmentName ? `[Uploaded Document: ${attachmentName}]\n${userPrompt}` : userPrompt,
         history,
       });
@@ -2758,8 +2899,10 @@ app.post('/api/ai/chat', async (req, res) => {
       console.warn('Groq failed, trying Grok/OpenRouter:', err);
     }
 
-    // 1) Grok via OpenRouter (Parth's key) — primary provider for every chatbot search
-    try {
+    // Groq ONLY — no other provider. If Groq returns nothing, fall through
+    // to the honest "unreachable" message below.
+    // Grok disabled by default — chatbot answers come only from Groq.
+    if (NON_GROQ_FALLBACK_ENABLED) {
       const grok = await callGrok({
         system:
           CAMPUS_AI_MASTER_PROMPT +
@@ -2774,12 +2917,11 @@ app.post('/api/ai/chat', async (req, res) => {
           providerUsed: `Grok ${grok.model} via OpenRouter · MCA Assessment RAG`,
         });
       }
-    } catch (err) {
-      console.warn('Grok (OpenRouter) failed, trying Gemini/fallback:', err);
     }
 
+    // Gemini disabled by default — chatbot answers come only from Groq.
     const ai = getGeminiClient();
-    if (ai) {
+    if (NON_GROQ_FALLBACK_ENABLED && ai) {
       try {
         let conversationPrompt = userPrompt;
         if (history && Array.isArray(history) && history.length > 0) {
@@ -2813,8 +2955,15 @@ app.post('/api/ai/chat', async (req, res) => {
     }
 
     return res.json({
-      ...baseRAG,
-      providerUsed: `Kristu Jayanti Foundry RAG (${AZURE_CONFIG.textDeployment}) · Master Prompt v5.0`,
+      reply: `Groq (the chatbot's answer engine) is unreachable right now, so I can't answer yet. Please try again in a moment — your question was not answered by any other source.`,
+      intent: 'GENERAL_ASSISTANCE',
+      responseMode: 'GENERAL ASSISTANT',
+      knowledgeLevel: 'LEVEL 2 — Official University Knowledge',
+      confidence: 'low',
+      confidenceLabel: 'LOW CONFIDENCE',
+      sources: [],
+      suggestedActions: [{ label: 'Try Again', targetView: 'ai-assistant' }],
+      providerUsed: 'Groq Unavailable · No Fallback Used',
     });
   } catch {
     return res.status(500).json({
@@ -2850,7 +2999,7 @@ app.post('/api/ai/tutor', async (req, res) => {
     try {
       const groqFast = await callGroq({
         system:
-          CAMPUS_AI_MASTER_PROMPT +
+          buildGroqSystemPrompt() +
           '\nRule: Never output raw markdown headings like ## Concept or ask questions like "which part are you working on". Always explain the core points clearly, step-by-step, with numbers (Point 1, Point 2, Point 3, etc.) so that all students can understand properly.',
         user: selectedPrompt,
       });
@@ -2863,11 +3012,11 @@ app.post('/api/ai/tutor', async (req, res) => {
         });
       }
     } catch {
-      // Fall through to Grok, then Gemini, then structured fallback below
+      // Groq failed — fall through to the honest "unreachable" message below.
     }
 
-    // 1) Grok via OpenRouter first (Parth's key)
-    try {
+    // Grok disabled by default — tutor answers come only from Groq.
+    if (NON_GROQ_FALLBACK_ENABLED) {
       const grok = await callGrok({
         system:
           CAMPUS_AI_MASTER_PROMPT +
@@ -2882,13 +3031,11 @@ app.post('/api/ai/tutor', async (req, res) => {
           source: 'Grok via OpenRouter · MCA Semester-I Assessment Pack',
         });
       }
-    } catch {
-      // Fall through to Gemini, then the structured fallback below
     }
 
     const ai = getGeminiClient();
-
-    if (ai) {
+    // (Gemini disabled — tutor answers come only from Groq.)
+    if (NON_GROQ_FALLBACK_ENABLED && ai) {
       try {
         const response = await ai.models.generateContent({
           model: 'gemini-3.8-flash',
@@ -3008,10 +3155,10 @@ Point 5: Key Takeaway Summary
     };
 
     return res.json({
-      reply: fallbackReplies[action || 'custom'] || fallbackReplies.custom,
+      reply: `Groq (the tutor's answer engine) is unreachable right now, so I can't answer yet. Please try again in a moment.`,
       topic: currentTopic,
-      understandingDelta: action === 'quiz' ? 6 : 4,
-      source: 'CS 201 Course Pack • Prof. Sarah Johnson • Ch. 6 Trees & Recursion',
+      understandingDelta: 0,
+      source: 'Groq Unavailable · No Fallback Used',
     });
   } catch {
     return res.status(500).json({

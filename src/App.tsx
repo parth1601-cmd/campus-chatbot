@@ -26,7 +26,6 @@ import { FacultyDirectoryView } from './components/FacultyDirectoryView';
 import { KJCLogo } from './components/KJCLogo';
 import {
   StudentDashboard,
-  CoursesView,
   AITutorView,
   LiveLearningView,
   AssignmentsView,
@@ -34,6 +33,7 @@ import {
   AcademicProgressView,
   GradesView,
 } from './components/StudentAcademicViews';
+import { CoursesView } from './components/MyCoursesView';
 import {
   FinancialAidView,
   CampusServicesView,

@@ -548,7 +548,27 @@ function keywordHit(q: string, kw: string): boolean {
   if (kw.length <= 4) {
     return new RegExp(`\\b${escapeRegExp(kw)}\\b`).test(q);
   }
-  return q.includes(kw);
+  if (q.includes(kw)) return true;
+  // Concatenated / typo-tolerant match: "linklist" / "linkedlist" / "binarysearch" …
+  const qFlat = q.replace(/[^a-z0-9]/g, '');
+  const kwFlat = kw.replace(/[^a-z0-9]/g, '');
+  if (kwFlat.length >= 5 && qFlat.includes(kwFlat)) return true;
+  return false;
+}
+
+/** Fix the most common student typos before subject/topic matching. */
+function fixCommonTypos(q: string): string {
+  return q
+    .replace(/\beer\s+modal\b/g, 'eer model')
+    .replace(/\ber\s+modal\b/g, 'er model')
+    .replace(/\blink\s*list\b/g, 'linked list')
+    .replace(/\blinkedlist\b/g, 'linked list')
+    .replace(/\blinklist\b/g, 'linked list')
+    .replace(/\bbinery\b/g, 'binary')
+    .replace(/\bseach\b/g, 'search')
+    .replace(/\bquue\b/g, 'queue')
+    .replace(/\bstak\b/g, 'stack')
+    .replace(/\barry\b/g, 'array');
 }
 
 const MODE_RULES: Array<{ mode: McaStudyMode; keywords: string[] }> = [
@@ -578,7 +598,8 @@ function detectMode(q: string): McaStudyMode {
  * Returns the best subject, unit, topic hits, study mode and syllabus status.
  */
 export function matchMcaSyllabus(query: string): McaMatch {
-  const q = query.toLowerCase().trim();
+  const raw = query.toLowerCase().trim();
+  const q = fixCommonTypos(raw);
   const mode = detectMode(q);
 
   if (!q) {
@@ -626,30 +647,78 @@ export function matchMcaSyllabus(query: string): McaMatch {
     return { subject: bestSubject, unit: null, matchedTopics: [beyondHit], mode, status: 'beyond-syllabus', score: bestScore };
   }
 
-  let bestUnit: McaUnit | null = null;
-  let bestUnitScore = 0;
-  const matchedTopics: string[] = [];
+  // Rank topics by specificity (specific phrase hits beat generic single-word hits),
+  // so "linked list" wins over generic "data / introduction" filler topics.
+  const qFlat = q.replace(/[^a-z0-9]/g, '');
+  const unitMention = q.match(/unit\s*([1-5])/);
+  const STOP = new Set([
+    'with', 'using', 'from', 'into', 'and/or', 'introduction', 'implementation',
+    'implementations', 'applications', 'application', 'basic', 'basics', 'advanced',
+  ]);
+  const scoredTopics: Array<{ unit: McaUnit; topic: string; score: number }> = [];
+  const unitScores = new Map<string, number>();
   for (const unit of bestSubject.units) {
     let unitScore = 0;
+    // Explicit "Unit N" mention boosts that unit (student told us where to look).
+    if (unitMention && unit.unit.toLowerCase().includes(`unit ${unitMention[1]}`)) {
+      unitScore += 5;
+    }
     for (const topic of unit.topics) {
-      const words = topic
-        .toLowerCase()
+      const t = topic.toLowerCase();
+      const words = t
         .replace(/[^a-z0-9+/#.\s]/g, ' ')
         .split(/\s+/)
-        .filter((w) => w.length > 3 && !['with', 'using', 'from', 'into', 'and/or'].includes(w));
-      const hits = words.filter((w) => q.includes(w)).length;
-      if (hits > 0) {
-        unitScore += hits;
-        if (hits >= 1 && matchedTopics.length < 6 && !matchedTopics.includes(topic)) {
-          matchedTopics.push(topic);
+        .filter((w) => w.length > 3 && !STOP.has(w));
+      let score = 0;
+      for (const w of words) {
+        if (q.includes(w)) score += Math.min(w.length, 8);
+        else {
+          const wFlat = w.replace(/[^a-z0-9]/g, '');
+          if (wFlat.length >= 5 && qFlat.includes(wFlat)) score += Math.min(w.length, 8);
         }
       }
+      // Full-phrase bonus: the exact multi-word topic phrase in the query.
+      const core = t.replace(/\(.*?\)/g, '').trim();
+      if (core.length > 5 && (q.includes(core) || qFlat.includes(core.replace(/[^a-z0-9]/g, '')))) {
+        score += 12;
+      } else if (words.length >= 2) {
+        // Any 2-word phrase from the topic appearing verbatim is a strong signal.
+        const parts = core.split(/\s+/);
+        for (let i = 0; i < parts.length - 1; i++) {
+          const phrase = `${parts[i]} ${parts[i + 1]}`;
+          if (phrase.length > 6 && q.includes(phrase)) {
+            score += 8;
+            break;
+          }
+        }
+      }
+      // Acronym bonus: EER, BCNF, 3NF, BST, AVL, BFS, SQL, JSP… typed as-is.
+      const acronyms = topic.match(/\b[A-Z0-9]{2,5}\b/g) || [];
+      for (const ac of acronyms) {
+        if (new RegExp(`\\b${ac.toLowerCase()}\\b`).test(q)) {
+          score += 10;
+          break;
+        }
+      }
+      if (score > 0) {
+        scoredTopics.push({ unit, topic, score });
+        unitScore += score;
+      }
     }
-    if (unitScore > bestUnitScore) {
-      bestUnitScore = unitScore;
+    unitScores.set(unit.unit, unitScore);
+  }
+  scoredTopics.sort((a, b) => b.score - a.score);
+  const matchedTopics = scoredTopics.slice(0, 4).map((s) => s.topic);
+  let bestUnit: McaUnit | null = null;
+  let bestUnitScore = -1;
+  for (const unit of bestSubject.units) {
+    const s = unitScores.get(unit.unit) || 0;
+    if (s > bestUnitScore) {
+      bestUnitScore = s;
       bestUnit = unit;
     }
   }
+  if (bestUnitScore <= 0) bestUnit = null;
 
   return {
     subject: bestSubject,
@@ -676,18 +745,25 @@ export interface McaTopicHit {
  * Flat topic search for the global SIS search box and quick links.
  */
 export function searchMcaTopics(query: string, limit = 4): McaTopicHit[] {
-  const q = query.toLowerCase().trim();
+  const q = fixCommonTypos(query.toLowerCase().trim());
   if (q.length < 2) return [];
   const hits: Array<McaTopicHit & { score: number }> = [];
   for (const subject of MCA_SEM1_SUBJECTS) {
     for (const unit of subject.units) {
       for (const topic of unit.topics) {
         const t = topic.toLowerCase();
+        const tFlat = t.replace(/[^a-z0-9]/g, '');
         let score = 0;
         if (t.includes(q)) score = q.length >= 4 ? 10 + q.length : 6;
+        else if (q.replace(/[^a-z0-9]/g, '').length >= 5 && tFlat.includes(q.replace(/[^a-z0-9]/g, ''))) score = 10;
         else {
           const words = q.split(/\s+/).filter((w) => w.length > 2);
-          const matched = words.filter((w) => t.includes(w)).length;
+          const matched = words.filter(
+            (w) =>
+              t.includes(w) ||
+              (w.replace(/[^a-z0-9]/g, '').length >= 5 &&
+                tFlat.includes(w.replace(/[^a-z0-9]/g, ''))),
+          ).length;
           if (matched > 0 && matched / words.length >= 0.5) score = matched * 2;
         }
         if (score > 0) {
@@ -729,4 +805,122 @@ export function getMcaSubjectIndex(): Array<{ id: string; name: string; shortNam
     shortName: s.shortName,
     units: s.units.map((u) => `${u.unit}: ${u.title}`),
   }));
+}
+
+/** My Courses presentation card for one MCA Semester-I subject. */
+export interface McaCourseCard {
+  id: string;
+  subjectId: string;
+  code: string;
+  title: string;
+  shortName: string;
+  coordinator: string;
+  department: string;
+  credits: number;
+  schedule: string;
+  room: string;
+  photo: string;
+  accent: string;
+  tagline: string;
+}
+
+function topicCount(subjectId: string): number {
+  const s = MCA_SEM1_SUBJECTS.find((x) => x.id === subjectId);
+  return s ? s.units.reduce((n, u) => n + u.topics.length, 0) : 0;
+}
+
+export function getMcaCourseUnits(subjectId: string): McaUnit[] {
+  const s = MCA_SEM1_SUBJECTS.find((x) => x.id === subjectId);
+  return s ? s.units : [];
+}
+
+export const MCA_PROGRAM_META = {
+  program: 'MCA · Division D',
+  semester: 'Semester I · Fall 2026',
+  student: 'Parth Pimplapure · 26MCAD30',
+  totalCredits: 20,
+  subjectCount: 5,
+};
+
+/** Official MCA Semester-I course lineup with cover photos (Unsplash CDN). */
+export const MCA_COURSE_CARDS: McaCourseCard[] = [
+  {
+    id: 'mca-dsa',
+    subjectId: 'dsa',
+    code: 'MCA101',
+    title: 'Data Structures and Algorithmic Techniques',
+    shortName: 'Data Structures',
+    coordinator: 'Dr. Velmurugan R · PG Coordinator',
+    department: 'Dept. of Computer Science (PG)',
+    credits: 4,
+    schedule: 'Mon · Wed · Fri · 10:00 AM',
+    room: 'Turing Hall 302',
+    photo: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=900&q=60',
+    accent: '#1E3A8A',
+    tagline: 'Trees, graphs, sorting and algorithmic design — the core of every technical interview.',
+  },
+  {
+    id: 'mca-python',
+    subjectId: 'python',
+    code: 'MCA102',
+    title: 'Python Programming',
+    shortName: 'Python',
+    coordinator: 'Dr. Sheeja S · Professor (PG)',
+    department: 'Dept. of Computer Science (PG)',
+    credits: 4,
+    schedule: 'Tue · Thu · 9:00 AM',
+    room: 'Turing Lab 2',
+    photo: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=900&q=60',
+    accent: '#0E7C3A',
+    tagline: 'From Python basics to NumPy, Pandas, visualisation and Tkinter desktop apps.',
+  },
+  {
+    id: 'mca-java-web',
+    subjectId: 'java-web',
+    code: 'MCA103',
+    title: 'Java and Web Programming',
+    shortName: 'Java & Web',
+    coordinator: 'Dr. Muruganantham A · Head (PG)',
+    department: 'Dept. of Computer Science (PG)',
+    credits: 4,
+    schedule: 'Mon · Wed · 1:00 PM',
+    room: 'Turing Hall 208',
+    photo: 'https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=900&q=60',
+    accent: '#B3540A',
+    tagline: 'OOP in Java, multithreading, and full-stack web: HTML, JS, Servlets and JSP.',
+  },
+  {
+    id: 'mca-maths',
+    subjectId: 'maths',
+    code: 'MCA104',
+    title: 'Mathematical Foundations for Computer Science',
+    shortName: 'Maths (MFCS)',
+    coordinator: 'Dr. M. Subramaniakumar · Professor (PG)',
+    department: 'Dept. of Computer Science (PG)',
+    credits: 4,
+    schedule: 'Tue · Thu · 11:30 AM',
+    room: 'Euler Pavilion 104',
+    photo: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=900&q=60',
+    accent: '#6E261A',
+    tagline: 'Matrices, linear algebra, sets, probability and distributions — solved step by step.',
+  },
+  {
+    id: 'mca-adbms',
+    subjectId: 'adbms',
+    code: 'MCA105',
+    title: 'Advanced Database Management Systems',
+    shortName: 'ADBMS',
+    coordinator: 'Dr. S. Satheesh Kumar · Professor (PG)',
+    department: 'Dept. of Computer Science (PG)',
+    credits: 4,
+    schedule: 'Fri · 2:00 PM · Lab Sat 10:00 AM',
+    room: 'Data Lab 1',
+    photo: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=900&q=60',
+    accent: '#4A3A8A',
+    tagline: 'Relational design, SQL, normalisation to 5NF/BCNF and transaction management.',
+  },
+];
+
+export function getMcaCourseTopicCount(subjectId: string): number {
+  return topicCount(subjectId);
 }

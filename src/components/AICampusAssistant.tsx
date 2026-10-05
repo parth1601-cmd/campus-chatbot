@@ -603,7 +603,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
                   </span>
                 </div>
                 <div className="text-[10px] text-stone-600 truncate font-mono">
-                  Postgraduate Dept. of Computer Science · Gemini 3.8 Flash
+                  Postgraduate Dept. of Computer Science · Groq AI
                 </div>
               </div>
             </div>

@@ -22,6 +22,8 @@ import {
   Camera,
   Image as ImageIcon,
   MapPin,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { Course, AssignmentItem, ViewId, PersonalizedCourseRecommendation } from '../types';
 import {
@@ -39,7 +41,45 @@ import {
   getStoredChronicle,
   ChronicleConfig,
 } from '../data/zanzeeData';
+import {
+  MCA_COURSE_CARDS,
+  MCA_PROGRAM_META,
+  getMcaCourseUnits,
+  getMcaCourseTopicCount,
+  type McaCourseCard,
+} from '../data/mcaSyllabus';
 import { KJCLogo } from './KJCLogo';
+
+/** Cover photo with graceful fallback to subject initials if the CDN image fails. */
+const McaCoverPhoto: React.FC<{ card: McaCourseCard; className?: string; alt: string }> = ({
+  card,
+  className,
+  alt,
+}) => {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div
+        className={`flex items-center justify-center text-white font-serif font-bold ${className || ''}`}
+        style={{ backgroundColor: card.accent }}
+        aria-label={alt}
+        role="img"
+      >
+        <span className="text-2xl">{card.code}</span>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={card.photo}
+      alt={alt}
+      referrerPolicy="no-referrer"
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className={`object-cover ${className || ''}`}
+    />
+  );
+};
 
 export interface SharedNavProps {
   onNavigate: (view: ViewId, payload?: string) => void;
@@ -864,27 +904,30 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
   onAskAI,
   onShowToast,
 }) => {
-  const [coursesList, setCoursesList] = useState<Course[]>(getStoredCourses);
-  const [activeCourseId, setActiveCourseId] = useState<string | null>(selectedCourseId || null);
+  // MCA Semester-I catalogue (official assessment syllabus). Legacy LMS ids
+  // (e.g. cs-201 from global search) gracefully fall back to the grid.
+  const [activeCourseId, setActiveCourseId] = useState<string | null>(
+    MCA_COURSE_CARDS.some((c) => c.id === selectedCourseId) ? selectedCourseId || null : null
+  );
+  const [openUnit, setOpenUnit] = useState<string | null>('Unit 1');
 
   useEffect(() => {
-    const handleCoursesUpdate = () => {
-      setCoursesList(getStoredCourses());
-    };
-    window.addEventListener('kjit_courses_updated', handleCoursesUpdate);
-    return () => window.removeEventListener('kjit_courses_updated', handleCoursesUpdate);
-  }, []);
+    if (selectedCourseId && MCA_COURSE_CARDS.some((c) => c.id === selectedCourseId)) {
+      setActiveCourseId(selectedCourseId);
+    }
+  }, [selectedCourseId]);
 
   const [activeTab, setActiveTab] = useState<
     'Overview' | 'Content' | 'Assignments' | 'Grades' | 'Discussions' | 'AI Tutor'
   >('Overview');
   const [tutorQuery, setTutorQuery] = useState('');
   const [tutorResponse, setTutorResponse] = useState<string>(
-    'Welcome to the embedded CS 201 Course Tutor. Ask me to explain binary search trees, trace a recursion tree, or quiz you before Friday’s assignment deadline.'
+    'Welcome to your MCA Semester-I course tutor. Ask me to teach AVL rotations, trace Dijkstra on an example graph, quiz you on Python lists, or solve a matrix rank problem step by step.'
   );
   const [tutorLoading, setTutorLoading] = useState(false);
 
-  const selectedCourse: Course | undefined = coursesList.find((c) => c.id === activeCourseId);
+  const selectedCourse: McaCourseCard | undefined = MCA_COURSE_CARDS.find((c) => c.id === activeCourseId);
+  const selectedUnits = selectedCourse ? getMcaCourseUnits(selectedCourse.subjectId) : [];
 
   const triggerCourseTutor = async (action: 'explain' | 'hint' | 'example' | 'quiz' | 'custom', customText?: string) => {
     setTutorLoading(true);
@@ -893,7 +936,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          topic: `${selectedCourse?.code || 'CS 201'} — Binary Search Trees`,
+          topic: selectedCourse ? `${selectedCourse.code} — ${selectedCourse.title}` : 'MCA Semester-I',
           action,
           question: customText,
         }),
@@ -901,7 +944,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
       const data = await res.json();
       if (data.reply) setTutorResponse(data.reply);
     } catch {
-      setTutorResponse('Let’s break Binary Search Trees down step by step: every left descendant is smaller than the parent node, and every right descendant is larger.');
+      setTutorResponse('Let’s break this down step by step: tell me the exact topic (for example "AVL rotations" or "Bayes theorem") and I will teach it simply, then check your understanding.');
     } finally {
       setTutorLoading(false);
     }
@@ -912,73 +955,101 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
       <div className="space-y-6">
         <div className="border-b border-stone-300 pb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="text-xs font-mono text-stone-500">KRISTU JAYANTI INSTITUTE OF TECHNOLOGY LMS · FALL 2026</div>
+            <div className="text-xs font-mono text-stone-500">
+              KRISTU JAYANTI INSTITUTE OF TECHNOLOGY · {MCA_PROGRAM_META.program.toUpperCase()} · {MCA_PROGRAM_META.semester.toUpperCase()}
+            </div>
             <h1 className="font-serif text-3xl font-bold text-stone-900">My Courses</h1>
+            <div className="text-xs text-stone-600 mt-1">
+              {MCA_PROGRAM_META.student} · {MCA_PROGRAM_META.subjectCount} subjects · {MCA_PROGRAM_META.totalCredits} credits · Official assessment syllabus
+            </div>
           </div>
           <button
             type="button"
-            onClick={() => onAskAI('Can I register for CS 310 next semester?')}
+            onClick={() => onAskAI('Give me a one-shot revision plan for all 5 MCA Semester-I subjects')}
             className="px-4 py-2 bg-[#1E3A8A] text-white text-xs font-medium hover:bg-blue-950 transition-colors cursor-pointer"
           >
-            Ask AI about Spring 2027 Registration
+            AI Revision Plan
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {coursesList.map((course) => (
-            <div key={course.id} className="bg-white border border-stone-300 p-6 flex flex-col justify-between space-y-5">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs font-mono text-stone-500 tabular-nums">
-                  <span>{course.code} · {course.department}</span>
-                  <span>{course.progress}% COMPLETE · GRADE {course.currentGrade}</span>
+          {MCA_COURSE_CARDS.map((course) => {
+            const units = getMcaCourseUnits(course.subjectId);
+            const topics = getMcaCourseTopicCount(course.subjectId);
+            return (
+              <div key={course.id} className="bg-white border border-stone-300 flex flex-col overflow-hidden">
+                <div className="relative">
+                  <McaCoverPhoto card={course} alt={`${course.title} cover`} className="w-full h-44" />
+                  <span
+                    className="absolute top-3 left-3 text-[11px] font-mono font-bold text-white px-2 py-1"
+                    style={{ backgroundColor: course.accent }}
+                  >
+                    {course.code} · {course.credits} CR
+                  </span>
+                  <span className="absolute top-3 right-3 text-[11px] font-mono font-bold bg-white/95 text-stone-900 px-2 py-1 border border-stone-300">
+                    {units.length} UNITS · {topics} TOPICS
+                  </span>
                 </div>
-                <h2 className="font-serif text-2xl font-bold text-stone-900">{course.title}</h2>
-                <div className="text-xs text-stone-600">
-                  {course.professor} · {course.professorRole}
-                </div>
-                <p className="text-xs text-stone-700 leading-relaxed">{course.description}</p>
-
-                <div className="w-full h-2 bg-stone-200">
-                  <div className="h-full bg-[#1E3A8A]" style={{ width: `${course.progress}%` }} />
-                </div>
-
-                <div className="pt-2 border-t border-stone-200 grid grid-cols-2 gap-2 text-xs text-stone-600">
-                  <div>
-                    <span className="text-stone-500 block">Next class</span>
-                    <span className="font-medium text-stone-900">{course.nextClass}</span>
+                <div className="p-6 flex flex-col justify-between space-y-4 flex-1">
+                  <div className="space-y-2">
+                    <h2 className="font-serif text-2xl font-bold text-stone-900 leading-tight">{course.title}</h2>
+                    <div className="text-xs text-stone-600">
+                      {course.coordinator} · {course.department}
+                    </div>
+                    <p className="text-xs text-stone-700 leading-relaxed">{course.tagline}</p>
+                    <div className="text-xs text-stone-600 border-t border-stone-200 pt-2 grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-stone-500 block">Schedule</span>
+                        <span className="font-medium text-stone-900">{course.schedule}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-500 block">Venue</span>
+                        <span className="font-medium text-stone-900">{course.room}</span>
+                      </div>
+                    </div>
+                    <div className="text-[11px] font-mono text-stone-500">
+                      {units.map((u) => u.unit).join(' · ')}
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-stone-500 block">Next assignment</span>
-                    <span className="font-medium text-stone-900">{course.nextAssignmentTitle} ({course.nextAssignmentDue})</span>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveCourseId(course.id);
+                        setOpenUnit('Unit 1');
+                      }}
+                      className="px-4 py-2 text-white text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer"
+                      style={{ backgroundColor: course.accent }}
+                    >
+                      Open Course
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('live-learning')}
+                      className="px-4 py-2 bg-[#FBF9F5] border border-stone-300 text-stone-900 text-xs font-medium hover:bg-stone-100 transition-colors cursor-pointer"
+                    >
+                      Live Classroom & VOD
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onAskAI(`Teach me ${course.title} starting from Unit 1`)}
+                      className="px-4 py-2 bg-[#FBF9F5] border border-stone-300 text-stone-900 text-xs font-medium hover:bg-stone-100 transition-colors cursor-pointer"
+                    >
+                      Teach Me
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onAskAI(`Generate an MCQ quiz on ${course.shortName} (MCA Semester-I)`)}
+                      className="px-4 py-2 bg-[#FBF9F5] border border-stone-300 text-stone-900 text-xs font-medium hover:bg-stone-100 transition-colors cursor-pointer"
+                    >
+                      Quiz Me
+                    </button>
                   </div>
                 </div>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveCourseId(course.id)}
-                  className="px-4 py-2 bg-[#1E3A8A] text-white text-xs font-medium hover:bg-blue-950 transition-colors cursor-pointer"
-                >
-                  Open Course
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('live-learning')}
-                  className="px-4 py-2 bg-[#FBF9F5] border border-stone-300 text-stone-900 text-xs font-medium hover:bg-stone-100 transition-colors cursor-pointer"
-                >
-                  Live Classroom & VOD
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onAskAI(`Summarize my syllabus and next assignment for ${course.code}: ${course.title}`)}
-                  className="px-4 py-2 bg-[#FBF9F5] border border-stone-300 text-stone-900 text-xs font-medium hover:bg-stone-100 transition-colors cursor-pointer"
-                >
-                  Ask AI
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -995,52 +1066,61 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
           ← Back to all courses
         </button>
         <div className="text-xs font-mono text-stone-500 tabular-nums">
-          {selectedCourse.code} · {selectedCourse.room} · {selectedCourse.nextClass}
+          {selectedCourse.code} · {selectedCourse.room} · {selectedCourse.schedule}
         </div>
       </div>
 
-      <div className="bg-white border border-stone-300 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        <div className="lg:col-span-8 space-y-2">
-          <div className="text-xs font-mono text-[#1E3A8A]">
-            {selectedCourse.code} · {selectedCourse.department.toUpperCase()}
-          </div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">
-            {selectedCourse.title}
-          </h1>
-          <div className="text-xs text-stone-600">
-            {selectedCourse.professor} ({selectedCourse.professorRole}) · Schedule: {selectedCourse.nextClass} in {selectedCourse.room}
-          </div>
-          <p className="text-sm text-stone-700 leading-relaxed pt-1">
-            {selectedCourse.description}
-          </p>
+      <div className="bg-white border border-stone-300 overflow-hidden">
+        <div className="relative">
+          <McaCoverPhoto card={selectedCourse} alt={`${selectedCourse.title} banner`} className="w-full h-52" />
+          <span
+            className="absolute top-4 left-4 text-xs font-mono font-bold text-white px-2.5 py-1"
+            style={{ backgroundColor: selectedCourse.accent }}
+          >
+            {selectedCourse.code} · {selectedCourse.credits} CREDITS
+          </span>
         </div>
+        <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div className="lg:col-span-8 space-y-2">
+            <div className="text-xs font-mono" style={{ color: selectedCourse.accent }}>
+              {selectedCourse.code} · {selectedCourse.department.toUpperCase()} · {MCA_PROGRAM_META.semester.toUpperCase()}
+            </div>
+            <h1 className="font-serif text-3xl font-bold text-stone-900">
+              {selectedCourse.title}
+            </h1>
+            <div className="text-xs text-stone-600">
+              {selectedCourse.coordinator} · {selectedCourse.schedule} in {selectedCourse.room}
+            </div>
+            <p className="text-sm text-stone-700 leading-relaxed pt-1">
+              {selectedCourse.tagline}
+            </p>
+          </div>
 
-        <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-stone-300 pt-4 lg:pt-0 lg:pl-6 space-y-3">
-          <div className="flex justify-between text-xs font-mono tabular-nums">
-            <span>MODULE COMPLETION</span>
-            <span className="font-bold text-stone-900">{selectedCourse.progress}%</span>
-          </div>
-          <div className="w-full h-2 bg-stone-200">
-            <div className="h-full bg-[#1E3A8A]" style={{ width: `${selectedCourse.progress}%` }} />
-          </div>
-          <div className="text-xs text-stone-600">
-            Current Standing: <span className="font-mono font-semibold text-stone-900">{selectedCourse.currentGrade} ({selectedCourse.numericScore}%)</span>
-          </div>
-          <div className="flex gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => onNavigate('live-learning')}
-              className="flex-1 py-2 px-3 bg-[#1E3A8A] text-white text-xs font-medium hover:bg-blue-950 transition-colors cursor-pointer"
-            >
-              Join Live Lecture
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('AI Tutor')}
-              className="py-2 px-3 bg-[#FBF9F5] border border-stone-300 text-stone-900 text-xs font-medium hover:bg-stone-100 transition-colors cursor-pointer"
-            >
-              AI Tutor
-            </button>
+          <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-stone-300 pt-4 lg:pt-0 lg:pl-6 space-y-3">
+            <div className="flex justify-between text-xs font-mono tabular-nums">
+              <span>SYLLABUS UNITS</span>
+              <span className="font-bold text-stone-900">{selectedUnits.length} UNITS</span>
+            </div>
+            <div className="text-xs text-stone-600">
+              Assessment topics: <span className="font-mono font-semibold text-stone-900">{getMcaCourseTopicCount(selectedCourse.subjectId)}</span>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => onNavigate('live-learning')}
+                className="flex-1 py-2 px-3 text-white text-xs font-medium hover:opacity-90 transition-opacity cursor-pointer"
+                style={{ backgroundColor: selectedCourse.accent }}
+              >
+                Join Live Lecture
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('AI Tutor')}
+                className="py-2 px-3 bg-[#FBF9F5] border border-stone-300 text-stone-900 text-xs font-medium hover:bg-stone-100 transition-colors cursor-pointer"
+              >
+                AI Tutor
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1065,47 +1145,73 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
       {activeTab === 'Overview' || activeTab === 'Content' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 space-y-4">
-            {selectedCourse.modules.map((mod) => (
-              <div key={mod.id} className="bg-white border border-stone-300 p-5 space-y-3">
-                <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-                  <div>
-                    <span className="text-xs font-mono text-[#1E3A8A]">{mod.week}</span>
-                    <h3 className="font-serif text-lg font-bold text-stone-900">{mod.title}</h3>
-                  </div>
-                </div>
-                <p className="text-xs text-stone-600">{mod.summary}</p>
-                <div className="divide-y divide-stone-200 pt-1">
-                  {mod.items.map((item) => (
-                    <div key={item.id} className="py-2.5 flex items-center justify-between gap-4 text-xs">
-                      <div className="flex items-center gap-2.5">
-                        <CheckCircle2
-                          className={`w-4 h-4 shrink-0 ${
-                            item.completed ? 'text-emerald-700' : 'text-stone-300'
-                          }`}
-                        />
-                        <span className="font-medium text-stone-900">{item.title}</span>
-                        <span className="text-stone-400">·</span>
-                        <span className="uppercase font-mono text-[11px] text-stone-500">{item.type}</span>
+            {selectedUnits.map((unit) => {
+              const isOpen = openUnit === unit.unit;
+              return (
+                <div key={unit.unit} className="bg-white border border-stone-300 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setOpenUnit(isOpen ? null : unit.unit)}
+                    className="w-full p-5 flex items-center justify-between gap-4 text-left hover:bg-[#FBF9F5] transition-colors cursor-pointer"
+                  >
+                    <div>
+                      <span className="text-xs font-mono" style={{ color: selectedCourse.accent }}>{unit.unit}</span>
+                      <h3 className="font-serif text-lg font-bold text-stone-900">{unit.title}</h3>
+                      <div className="text-[11px] font-mono text-stone-500 mt-0.5">
+                        {unit.topics.length} ASSESSMENT TOPICS
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-stone-600 tabular-nums">{item.durationOrDue}</span>
+                    </div>
+                    <ChevronDown
+                      className={`w-5 h-5 text-stone-500 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-5 space-y-3">
+                      <ul className="divide-y divide-stone-200 border-t border-stone-200">
+                        {unit.topics.map((topic) => (
+                          <li key={topic} className="py-2 flex items-center justify-between gap-4 text-xs">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <CheckCircle2 className="w-4 h-4 shrink-0 text-stone-300" />
+                              <span className="font-medium text-stone-900">{topic}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => onAskAI(`Teach me ${topic} (${selectedCourse.title}, ${unit.unit})`)}
+                              className="text-[#1E3A8A] hover:underline font-medium cursor-pointer shrink-0"
+                            >
+                              Learn
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
                         <button
                           type="button"
-                          onClick={() => {
-                            if (item.type === 'video') onNavigate('live-learning');
-                            else if (item.type === 'assignment') onNavigate('assignments');
-                            else onShowToast(`Opened ${item.title}`);
-                          }}
-                          className="text-[#1E3A8A] hover:underline font-medium cursor-pointer"
+                          onClick={() => onAskAI(`Teach me ${unit.unit} ${unit.title} (${selectedCourse.title}) simply`)}
+                          className="py-1.5 px-2.5 bg-[#FBF9F5] border border-stone-300 text-xs font-medium text-stone-800 hover:border-[#1E3A8A] cursor-pointer"
                         >
-                          Open
+                          Teach this unit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onAskAI(`Generate an MCQ quiz on ${unit.title} (${selectedCourse.code})`)}
+                          className="py-1.5 px-2.5 bg-[#FBF9F5] border border-stone-300 text-xs font-medium text-stone-800 hover:border-[#1E3A8A] cursor-pointer"
+                        >
+                          Quiz this unit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onAskAI(`Give a one-shot revision of ${unit.unit} ${unit.title} (${selectedCourse.title})`)}
+                          className="py-1.5 px-2.5 bg-[#FBF9F5] border border-stone-300 text-xs font-medium text-stone-800 hover:border-[#1E3A8A] cursor-pointer"
+                        >
+                          One-shot revision
                         </button>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="lg:col-span-4 space-y-4">
@@ -1118,12 +1224,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
               </div>
 
               <div className="overflow-hidden border border-stone-200">
-                <img
-                  src={ASSETS.courseCs}
-                  alt="Binary Search Tree Archival Diagram"
-                  referrerPolicy="no-referrer"
-                  className="w-full h-36 object-cover"
-                />
+                <McaCoverPhoto card={selectedCourse} alt={`${selectedCourse.title} tutor cover`} className="w-full h-36" />
               </div>
 
               <div className="p-3.5 bg-[#FBF9F5] border border-stone-200 text-xs text-stone-800 leading-relaxed whitespace-pre-line">
@@ -1201,21 +1302,21 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
           <div className="divide-y divide-stone-200 text-xs">
             <div className="py-3 space-y-1">
               <div className="font-semibold text-stone-900">
-                Pinned by {selectedCourse.professor}: Week 6 AVL Tree Rotation Invariants
+                Pinned by {selectedCourse.coordinator}: {selectedUnits[0] ? `${selectedUnits[0].unit} ${selectedUnits[0].title} — start here` : 'Semester plan'}
               </div>
               <p className="text-stone-600">
-                Remember to verify that left-right double rotations preserve in-order traversal keys on edge-case leaf insertions.
+                Work through the units in order, attempt the per-topic Learn links, then take the unit quiz before moving on.
               </p>
-              <div className="text-stone-500 font-mono">14 student replies · Updated 1 hour ago</div>
+              <div className="text-stone-500 font-mono">MCA Division D · Updated this week</div>
             </div>
             <div className="py-3 space-y-1">
               <div className="font-semibold text-stone-900">
-                Study Group Thread: Recurrence Relations & Master Theorem
+                Study Group Thread: {selectedCourse.shortName} weekend revision circle
               </div>
               <p className="text-stone-600">
-                Meeting tonight at 7:30 PM in the Central Reading Room Mezzanine.
+                Meeting Saturday at 10:00 AM in the Central Reading Room Mezzanine.
               </p>
-              <div className="text-stone-500 font-mono">8 student replies · Updated 3 hours ago</div>
+              <div className="text-stone-500 font-mono">Division D batch · All welcome</div>
             </div>
           </div>
         </div>
