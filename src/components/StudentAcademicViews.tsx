@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   ArrowRight,
@@ -19,6 +19,9 @@ import {
   Tag,
   BookOpen,
   Filter,
+  Camera,
+  Image as ImageIcon,
+  MapPin,
 } from 'lucide-react';
 import { Course, AssignmentItem, ViewId, PersonalizedCourseRecommendation } from '../types';
 import {
@@ -31,7 +34,12 @@ import {
   INITIAL_COURSE_RECOMMENDATIONS,
   getPersonalizedRecommendations,
   ASSETS,
+  KRISTU_JAYANTI_CAMPUS_PHOTOS,
+  getStoredCourses,
+  getStoredChronicle,
+  ChronicleConfig,
 } from '../data/zanzeeData';
+import { KJCLogo } from './KJCLogo';
 
 export interface SharedNavProps {
   onNavigate: (view: ViewId, payload?: string) => void;
@@ -46,14 +54,32 @@ export const StudentDashboard: React.FC<SharedNavProps> = ({
 }) => {
   const [heroQuery, setHeroQuery] = useState('');
   const [selectedEditionSection, setSelectedEditionSection] = useState<
-    'All Dispatches' | 'Academic & LMS' | 'Campus Gazette' | 'Bursar & Aid'
-  >('All Dispatches');
+    'All Stories' | 'Fests & Events' | 'Photo Gallery' | 'General'
+  >('All Stories');
   const [reportOpen, setReportOpen] = useState(false);
   const [recCategoryFilter, setRecCategoryFilter] = useState<string>('All');
   const [selectedInterests, setSelectedInterests] = useState<string[]>(STUDENT_PERSONA.statedInterests);
   const [plannedCourseIds, setPlannedCourseIds] = useState<string[]>(['cs-310']);
   const [interestsModalOpen, setInterestsModalOpen] = useState(false);
   const [newInterestInput, setNewInterestInput] = useState('');
+  const [coursesList, setCoursesList] = useState<Course[]>(getStoredCourses);
+  const [chronicle, setChronicle] = useState<ChronicleConfig>(getStoredChronicle);
+  const [activeCampusPhotoIndex, setActiveCampusPhotoIndex] = useState(0);
+
+  useEffect(() => {
+    const handleCoursesUpdate = () => {
+      setCoursesList(getStoredCourses());
+    };
+    const handleChronicleUpdate = () => {
+      setChronicle(getStoredChronicle());
+    };
+    window.addEventListener('kjit_courses_updated', handleCoursesUpdate);
+    window.addEventListener('kjit_chronicle_updated', handleChronicleUpdate);
+    return () => {
+      window.removeEventListener('kjit_courses_updated', handleCoursesUpdate);
+      window.removeEventListener('kjit_chronicle_updated', handleChronicleUpdate);
+    };
+  }, []);
 
   const togglePlannedCourse = (courseId: string, courseCode: string) => {
     if (plannedCourseIds.includes(courseId)) {
@@ -80,9 +106,9 @@ export const StudentDashboard: React.FC<SharedNavProps> = ({
 
   const generateReportText = () => {
     return `====================================================================
-THE ZANZEE CHRONICLE — OFFICIAL CAMPUSAI INTELLIGENCE & ACADEMIC REPORT
+THE KRISTU CHRONICLE — OFFICIAL CAMPUSAI INTELLIGENCE & ACADEMIC REPORT
 ====================================================================
-Institution: Zanzee College (Northstar University Consortium)
+Institution: Kristu Jayanti Institute of Technology (Kristu Jayanti College)
 Edition: Vol. CXIV, No. 42 — Fall 2026 Semester Report
 Generated For: ${STUDENT_PERSONA.name} (ID #${STUDENT_PERSONA.id})
 Program: ${STUDENT_PERSONA.program} (${STUDENT_PERSONA.year})
@@ -91,7 +117,7 @@ Academic Advisor: ${STUDENT_PERSONA.advisor}
 
 1. EXECUTIVE SUMMARY & PLATFORM ARCHITECTURE
 --------------------------------------------------------------------
-- Aesthetic & Design System: Zanzee College Chronicle Broadsheet UI
+- Aesthetic & Design System: The Kristu Chronicle Broadsheet UI
   * Newsprint Paper Palette: Warm Newsprint Canvas (#EAE2D3), Broadsheet Sheet (#F5F0E6), Recessed Press Wells (#E6DEC8), Carbon Printer's Ink (#141210), Press Stamp Burgundy (#6E261A)
   * Typography: Playfair Display (--font-serif) for masthead, hero headlines, and section headers; Plus Jakarta Sans (--font-sans) for body copy; JetBrains Mono (--font-mono) for tabular ledgers; Small-Caps & Drop-Cap lead-in paragraph styling for announcements
 - AI Engine & Master Prompt v5.0 Governance:
@@ -117,7 +143,7 @@ ${ASSIGNMENTS.map(
 4. FINANCIAL AID & BURSAR SUMMARY
 --------------------------------------------------------------------
 - Total Fall 2026 Tuition & Fees: $21,400
-- Zanzee Presidential Merit Scholarship: -$14,500
+- Kristu Jayanti Presidential Merit Scholarship: -$14,500
 - Federal Pell Grant: -$4,500
 - Remaining Net Balance Due (Oct 15, 2026): $2,400
 - Pending Action: Submit signed Form FA-104 (Proof of Enrollment) before October 15, 2026.
@@ -137,12 +163,12 @@ ${ASSIGNMENTS.map(
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Zanzee_Chronicle_CampusAI_Report_${STUDENT_PERSONA.id}.txt`;
+    a.download = `The_Kristu_Chronicle_Report_${STUDENT_PERSONA.id}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    onShowToast('Downloaded Official Zanzee Chronicle Dossier Report (.txt)');
+    onShowToast('Downloaded Official The Kristu Chronicle Dossier Report (.txt)');
   };
 
   const handleHeroSubmit = (e: React.FormEvent) => {
@@ -161,51 +187,61 @@ ${ASSIGNMENTS.map(
           {/* Left Ear: Weather & Campus Bulletin */}
           <div className="lg:col-span-3 border border-[#141210] p-3 bg-[#E6DEC8] text-xs space-y-1">
             <div className="font-mono font-semibold text-[#141210]">
-              ZANZEE QUAD · AUTUMN 58°F
+              KRISTU JAYANTI CAMPUS · 24°C
             </div>
             <div className="text-[#2E2A25] leading-snug">
-              Turing Hall Labs Open 24h · Grand Library Reading Room Cap: 64%
+              Turing Labs Open 24h · Central Library Reading Room Cap: 64%
             </div>
           </div>
 
           {/* Center Masthead Title */}
-          <div className="lg:col-span-6 text-center space-y-1.5 px-2">
-            <div className="text-[11px] font-mono tracking-widest uppercase text-stone-600">
-              EST. 1912 · NORTHSTAR UNIVERSITY CONSORTIUM · STUDENT INTELLIGENCE DAILY
+          <div className="lg:col-span-6 text-center space-y-2 px-2 flex flex-col items-center">
+            {/* Official KJC Logo Seal & Accreditation Badge */}
+            <div className="flex items-center justify-center gap-3">
+              <KJCLogo variant="emblem" size="md" />
+              <div className="text-left">
+                <div className="text-[11px] font-mono tracking-wider uppercase font-bold text-[#1E3A8A]">
+                  {chronicle.institutionName || 'KRISTU JAYANTI COLLEGE · AUTONOMOUS BENGALURU'}
+                </div>
+                <div className="text-[9px] font-mono text-stone-600">
+                  {chronicle.accreditation || 'Accredited ‘A++’ Grade by NAAC · Managed by CMI Fathers'}
+                </div>
+              </div>
             </div>
+
             <h1
               style={{ fontFamily: 'var(--font-serif)' }}
               className="newspaper-masthead text-stone-950"
             >
-              The Zanzee Chronicle
+              {chronicle.mastheadTitle || 'The Kristu Chronicle'}
             </h1>
             <div
               style={{ fontFamily: 'var(--font-serif)' }}
               className="text-sm italic text-stone-700"
             >
-              “Your Entire University, Powered by Verified Intelligence” — Special Edition for {STUDENT_PERSONA.name}
+              {chronicle.tagline || '“Fests, Photos & General Campus News — Official Student Newspaper”'}
             </div>
           </div>
 
-          {/* Right Ear: Student Academic Standing Box */}
+          {/* Right Ear: General Edition Box (newspaper info only) */}
           <div className="lg:col-span-3 border border-stone-900 p-3 bg-[#FBF9F5] text-xs space-y-1 font-mono tabular-nums">
             <div className="font-semibold text-[#1E3A8A]">
-              ID #{STUDENT_PERSONA.id} · {STUDENT_PERSONA.semester.toUpperCase()}
+              BENGALURU EDITION · FREE CAMPUS PRESS
             </div>
             <div className="text-stone-800">
-              CREDITS: 72 / 120 (60%) · GPA: {STUDENT_PERSONA.gpa}
+              FESTS · PHOTOS · GENERAL NEWS
             </div>
-            <div className="text-stone-600">B.Sc. Computer Science · Honours</div>
+            <div className="text-stone-600">Est. Campus Newspaper · Daily</div>
           </div>
         </div>
 
         {/* Double-Rule Dateline & Interactive Section Ribbon */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-900 pb-3 text-xs font-mono text-stone-800">
           <div className="tabular-nums">
-            VOL. CXIV · NO. 42 · THURSDAY, OCTOBER 1, 2026 · MORNING EDITION
+            {chronicle.dateline || 'VOL. CXIV · NO. 42 · THURSDAY, OCTOBER 1, 2026 · MORNING EDITION'}
           </div>
           <div className="flex flex-wrap items-center gap-1">
-            {(['All Dispatches', 'Academic & LMS', 'Campus Gazette', 'Bursar & Aid'] as const).map(
+            {(['All Stories', 'Fests & Events', 'Photo Gallery', 'General'] as const).map(
               (sec) => (
                 <button
                   key={sec}
@@ -224,145 +260,60 @@ ${ASSIGNMENTS.map(
                 </button>
               )
             )}
-            <button
-              type="button"
-              onClick={() => setReportOpen(true)}
-              className="ml-1 px-3 py-1 text-xs font-mono font-bold bg-[#6E261A] text-[#F5F0E6] hover:bg-[#141210] transition-colors cursor-pointer whitespace-nowrap"
-            >
-              Generate Chronicle Report
-            </button>
+            {/* Admin Editor removed from student view — admin only */}
+            {/* Academic report removed — pure newspaper only */}
           </div>
         </div>
 
-        {/* Printable / Downloadable Official Chronicle Report Modal */}
-        {reportOpen && (
-          <div
-            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="bg-[#F5F0E6] border-2 border-[#141210] shadow-[6px_6px_0px_#141210] max-w-3xl w-full max-h-[85vh] flex flex-col">
-              <div className="p-4 border-b-2 border-[#141210] flex items-center justify-between bg-[#E6DEC8]">
-                <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-[#6E261A] font-bold">
-                    OFFICIAL UNIVERSITY DOSSIER · ZANZEE COLLEGE CHRONICLE
-                  </div>
-                  <h2
-                    style={{ fontFamily: 'var(--font-serif)' }}
-                    className="newspaper-section-header text-[#141210]"
-                  >
-                    CampusAI Comprehensive Academic & Platform Report
-                  </h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleDownloadReport}
-                    className="px-3 py-1.5 bg-[#141210] text-[#F5F0E6] text-xs font-mono font-bold uppercase tracking-wider hover:bg-[#6E261A] transition-colors cursor-pointer"
-                  >
-                    Download Report (.TXT)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReportOpen(false)}
-                    className="px-2.5 py-1.5 border border-[#141210] text-xs font-mono font-bold text-[#141210] hover:bg-[#141210] hover:text-[#F5F0E6] cursor-pointer"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-              <div className="p-5 overflow-y-auto space-y-4 text-xs">
-                <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed bg-[#E6DEC8] p-4 border border-[#141210] text-[#141210]">
-                  {generateReportText()}
-                </pre>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Academic dossier report removed — newspaper only */}
 
-        {/* Above-the-Fold Central AI Dispatch Desk */}
+        {/* Above-the-Fold Editorial Standfirst — newspaper only, no AI / LMS */}
         <div className="pt-1 space-y-3">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
             <div>
               <span className="text-xs font-mono uppercase tracking-wider text-[#1E3A8A] font-semibold">
-                CAMPUSAI TELEGRAPH DESK
+                FEST & CAMPUS NEWS DESK
               </span>
               <span className="mx-2 text-stone-400">·</span>
               <span className="font-serif text-lg font-bold text-stone-900">
-                Good morning, Alex. What can I help you with today?
+                {chronicle.telegraphGreeting || 'Fest updates, photos & general campus news.'}
               </span>
             </div>
-            <span className="text-xs font-mono text-emerald-900">
-              Verified Sources: Registrar · LMS · Financial Aid · Library
+            <span className="text-xs font-mono text-stone-600">
+              Fests · Photos · General News
             </span>
           </div>
 
-          <form onSubmit={handleHeroSubmit} className="flex flex-col sm:flex-row gap-2">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={heroQuery}
-                onChange={(e) => setHeroQuery(e.target.value)}
-                placeholder="Ask CampusAI anything about your university… (e.g., 'When is my CS assignment due?' or 'What’s my next class?')"
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-[#FBF9F5] border border-stone-900 focus:border-[#1E3A8A] focus:bg-white focus:outline-none"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-6 py-2.5 bg-stone-900 hover:bg-[#1E3A8A] text-white text-xs font-mono uppercase tracking-wider font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <span>Query CampusAI</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-
-          {/* Quick Journalistic Dispatch Actions */}
+          {/* Quick Newspaper Index — fest / photos / general only */}
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             <span className="text-[11px] font-mono text-stone-500 mr-1">INDEX:</span>
             <button
               type="button"
-              onClick={() => onNavigate('courses')}
+              onClick={() => setSelectedEditionSection('Fests & Events')}
               className="px-2.5 py-1 text-xs font-medium bg-[#FBF9F5] hover:bg-stone-900 hover:text-white border border-stone-400 text-stone-900 transition-colors cursor-pointer whitespace-nowrap"
             >
-              Find my courses
+              Fest News
             </button>
             <button
               type="button"
-              onClick={() => onNavigate('assignments')}
+              onClick={() => setSelectedEditionSection('Photo Gallery')}
               className="px-2.5 py-1 text-xs font-medium bg-[#FBF9F5] hover:bg-stone-900 hover:text-white border border-stone-400 text-stone-900 transition-colors cursor-pointer whitespace-nowrap"
             >
-              Check assignments
+              Fest Photos
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedEditionSection('General')}
+              className="px-2.5 py-1 text-xs font-medium bg-[#FBF9F5] hover:bg-stone-900 hover:text-white border border-stone-400 text-stone-900 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              General News
             </button>
             <button
               type="button"
               onClick={() => onNavigate('calendar')}
               className="px-2.5 py-1 text-xs font-medium bg-[#FBF9F5] hover:bg-stone-900 hover:text-white border border-stone-400 text-stone-900 transition-colors cursor-pointer whitespace-nowrap"
             >
-              View my schedule
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('financial-aid')}
-              className="px-2.5 py-1 text-xs font-medium bg-[#FBF9F5] hover:bg-stone-900 hover:text-white border border-stone-400 text-stone-900 transition-colors cursor-pointer whitespace-nowrap"
-            >
-              Financial aid
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                onAskAI('How many credits do I need to graduate and can I register for CS 310?')
-              }
-              className="px-2.5 py-1 text-xs font-medium bg-[#FBF9F5] hover:bg-stone-900 hover:text-white border border-stone-400 text-stone-900 transition-colors cursor-pointer whitespace-nowrap"
-            >
-              Academic advising
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('it-support')}
-              className="px-2.5 py-1 text-xs font-medium bg-[#FBF9F5] hover:bg-stone-900 hover:text-white border border-stone-400 text-stone-900 transition-colors cursor-pointer whitespace-nowrap"
-            >
-              IT support
+              Events Calendar
             </button>
           </div>
         </div>
@@ -372,124 +323,60 @@ ${ASSIGNMENTS.map(
       <div className="bg-[#F5F0E6] border-2 border-[#141210] p-5 lg:p-6 shadow-[4px_4px_0px_#141210]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:divide-x lg:divide-[#141210]">
           {/* ================================================================
-              LEFT SIDEBAR COLUMN (3 COLS): DEADLINES, URGENT ALERTS & BULLETINS
-             ================================================================ */}
+              LEFT SIDEBAR COLUMN (3 COLS): FEST BULLETINS & GENERAL NOTICES
+              Newspaper only — no LMS / assignments / AI
+              ================================================================ */}
           <aside className="lg:col-span-3 space-y-6">
-            {/* Urgent Action Alert Box */}
+            {/* Fest Highlight Box (admin-editable via Chronicle Editor) */}
             <div className="border-2 border-stone-900 p-4 bg-[#FBF9F5] space-y-2.5">
               <div className="border-b border-stone-900 pb-1.5 flex items-center justify-between">
                 <span className="text-[11px] font-mono font-bold text-[#9A3412]">
-                  URGENT BURSAR BULLETIN
+                  {chronicle.urgentAlert?.tag || 'FEST BULLETIN'}
                 </span>
-                <span className="text-[11px] font-mono tabular-nums text-stone-700">OCT 15</span>
+                <span className="text-[11px] font-mono tabular-nums text-stone-700">{chronicle.urgentAlert?.date || 'THIS WEEK'}</span>
               </div>
               <h2
                 style={{ fontFamily: 'var(--font-serif)' }}
                 className="newspaper-section-header text-stone-950"
               >
-                Financial Aid Proof of Enrollment Required
+                {chronicle.urgentAlert?.title || 'Annual College Fest — Dates Announced'}
               </h2>
               <p className="newspaper-lead-in">
-                <span className="newspaper-dateline">BURSAR’S OFFICE —</span>
-                Your $14,500 Zanzee Presidential Merit Scholarship requires signed Form FA-104 prior to Fall disbursement on October 15.
+                <span className="newspaper-dateline">{chronicle.urgentAlert?.dateline || 'FEST DESK —'} </span>
+                {chronicle.urgentAlert?.text || 'The annual college fest schedule, venues and event list have been announced. See fest calendar for dates and photo gallery for highlights.'}
               </p>
               <div className="flex flex-wrap gap-1.5 pt-1">
                 <button
                   type="button"
-                  onClick={() => onNavigate('financial-aid')}
+                  onClick={() => onNavigate('calendar')}
                   className="px-3 py-1.5 bg-[#9A3412] text-white text-xs font-medium hover:bg-red-900 transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  Upload Document
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onAskAI('How do I submit my Proof of Enrollment for financial aid?')}
-                  className="px-2.5 py-1.5 bg-white border border-stone-900 text-stone-900 text-xs font-medium hover:bg-stone-100 transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  Ask AI
+                  {chronicle.urgentAlert?.buttonText || 'View Fest Schedule'}
                 </button>
               </div>
             </div>
 
-            {/* Quick-Glance Deadlines Ledger */}
-            <div className="space-y-3">
-              <div className="border-t-2 border-b border-stone-900 py-2 flex items-baseline justify-between gap-2">
-                <h2
-                  style={{ fontFamily: 'var(--font-serif)' }}
-                  className="newspaper-section-header text-stone-950"
-                >
-                  Assignment Deadlines
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('assignments')}
-                  className="text-[11px] font-mono text-[#1E3A8A] hover:underline cursor-pointer shrink-0"
-                >
-                  All →
-                </button>
-              </div>
-
-              <div className="divide-y divide-stone-300">
-                {urgentAssignments.map((asg) => (
-                  <div key={asg.id} className="py-3 first:pt-0 space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] font-mono tabular-nums">
-                      <span className="font-bold text-[#1E3A8A]">{asg.courseCode}</span>
-                      <span className="text-stone-600">{asg.dueDate}</span>
-                    </div>
-                    <h3
-                      style={{ fontFamily: 'var(--font-serif)' }}
-                      className="newspaper-subheadline text-stone-900"
-                    >
-                      {asg.title}
-                    </h3>
-                    <div className="flex items-center justify-between text-[11px] font-mono text-stone-600 tabular-nums">
-                      <span>Progress: {asg.progress}%</span>
-                      <span>Priority: {asg.priority}</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-stone-200 border border-stone-400">
-                      <div
-                        className="h-full bg-stone-900"
-                        style={{ width: `${asg.progress}%` }}
-                      />
-                    </div>
-                    <div className="pt-1 flex items-center justify-between">
-                      <span className="text-[11px] text-stone-600 italic font-serif truncate pr-2">
-                        {asg.statusText}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => onNavigate('assignments')}
-                        className="text-xs font-mono font-semibold text-stone-900 hover:text-[#1E3A8A] underline cursor-pointer shrink-0"
-                      >
-                        Continue
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Campus Service Wire */}
+            {/* General Campus Notice */}
             <div className="border-t-2 border-stone-900 pt-3 space-y-2.5">
               <div className="border-b border-stone-900 pb-1.5 flex items-center justify-between">
                 <h2
                   style={{ fontFamily: 'var(--font-serif)' }}
                   className="newspaper-section-header text-stone-950"
                 >
-                  Infrastructure Wire
+                  {chronicle.infraWire?.title || 'General Notice'}
                 </h2>
-                <span className="text-[10px] font-mono uppercase text-stone-600">IT OPS</span>
+                <span className="text-[10px] font-mono uppercase text-stone-600">{chronicle.infraWire?.tag || 'CAMPUS'}</span>
               </div>
               <p className="newspaper-lead-in">
-                <span className="newspaper-dateline">NETWORK DISPATCH —</span>
-                Zanzee-Secure 802.1X wireless rotated its root certificate authority this morning. Run automated AI diagnostics if your laptop prompts for trust verification.
+                <span className="newspaper-dateline">{chronicle.infraWire?.dateline || 'CAMPUS DESK —'} </span>
+                {chronicle.infraWire?.text || 'General campus announcements, timings and venue updates will appear here.'}
               </p>
               <button
                 type="button"
-                onClick={() => onNavigate('it-support')}
+                onClick={() => onNavigate('calendar')}
                 className="text-xs font-mono font-semibold text-[#1E3A8A] hover:underline cursor-pointer"
               >
-                Open IT Help Desk →
+                {chronicle.infraWire?.buttonText || 'View Events Calendar →'}
               </button>
             </div>
           </aside>
@@ -498,86 +385,195 @@ ${ASSIGNMENTS.map(
               CENTER MAIN COLUMN (6 COLS): HERO ARTICLE SECTIONS & FEATURE STORIES
              ================================================================ */}
           <div className="lg:col-span-6 lg:px-6 space-y-8">
-            {/* PRIMARY HERO ARTICLE */}
+            {/* PRIMARY HERO ARTICLE — fest / general news only */}
             <article className="space-y-4 border-b-2 border-stone-900 pb-6">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-stone-600">
                 <span className="font-bold text-[#1E3A8A]">
-                  LEAD ACADEMIC DISPATCH · TODAY AT 1:00 PM
+                  {chronicle.heroStory?.badge || 'LEAD FEST STORY · THIS WEEK'}
                 </span>
-                <span className="tabular-nums">TURING HALL · ROOM 302</span>
+                <span className="tabular-nums">{chronicle.heroStory?.locationTag || 'MAIN CAMPUS · FEST GROUND'}</span>
               </div>
 
               <h2
                 style={{ fontFamily: 'var(--font-serif)' }}
                 className="newspaper-hero-headline text-stone-950"
               >
-                CS 201 Convening Today on Balanced Binary Search Trees Ahead of Friday’s Autograder Deadline
+                {chronicle.heroStory?.headline || 'Annual College Fest Brings Music, Food Stalls & Inter-College Events to Campus'}
               </h2>
 
               <p
                 style={{ fontFamily: 'var(--font-serif)' }}
                 className="newspaper-deck"
               >
-                Professor Sarah Johnson’s afternoon seminar examines AVL double rotations and in-order successor deletion; 65% of your Lab 4 unit tests are currently passing.
+                {chronicle.heroStory?.deck || 'Three days of cultural performances, competitions and exhibitions — see full fest schedule, venues and photo highlights.'}
               </p>
 
               <div className="text-xs font-mono text-stone-500 border-y border-stone-300 py-1.5 flex flex-wrap items-center justify-between gap-2">
-                <span>By Department of Computer Science & Zanzee LMS Wire</span>
-                <span>4 Min Read · Verified Syllabus Source</span>
+                <span>{chronicle.heroStory?.byline || 'By The Kristu Chronicle · Fest Desk'}</span>
+                <span>{chronicle.heroStory?.readTime || '3 Min Read · Campus News'}</span>
               </div>
 
-              {/* Photojournalism Frame */}
+              {/* Photojournalism Frame — fest photo */}
               <figure className="border border-[#141210] bg-[#E6DEC8]">
                 <img
-                  src={ASSETS.campusQuad}
-                  alt="Students walking across the Zanzee College quadrangle toward Turing Hall"
+                  src={chronicle.heroStory?.imageUrl || ASSETS.kjuCampusMain}
+                  alt={chronicle.heroStory?.headline || 'College fest on campus'}
                   referrerPolicy="no-referrer"
-                  className="w-full h-64 object-cover newspaper-photo"
+                  className="w-full h-72 sm:h-80 object-cover newspaper-photo"
                 />
                 <figcaption
                   style={{ fontFamily: 'var(--font-serif)' }}
-                  className="p-3 border-t border-[#141210] text-xs italic text-[#2E2A25]"
+                  className="p-3 border-t border-[#141210] text-xs italic text-[#2E2A25] flex flex-wrap items-center justify-between gap-2"
                 >
-                  Fig. 1 — Morning traffic outside Turing Hall at Zanzee College. Live WebRTC streaming and Socratic AI Tutoring are active for today’s 1:00 PM CS 201 lecture.
+                  <span>
+                    {chronicle.heroStory?.imageCaption || 'Fig. 1 — Fest crowd at the main campus ground during the annual college fest.'}
+                  </span>
+                  <span className="text-[10px] font-mono not-italic uppercase tracking-widest text-[#1E3A8A] font-bold">
+                    {chronicle.heroStory?.imageBadge || 'Fest Photo'}
+                  </span>
                 </figcaption>
               </figure>
 
-              {/* Editorial Drop-Cap & Lead-In Body Prose */}
+              {/* Editorial Drop-Cap & Lead-In Body Prose — general fest info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm text-stone-800 leading-relaxed pt-1">
                 <p className="newspaper-dropcap newspaper-lead-in">
-                  As Zanzee College enters Week 6 of the Fall 2026 term, Computer Science undergraduates in CS 201 (Data Structures & Algorithmic Systems) are preparing for Friday’s milestone submission on Binary Search Trees. Your personal autograder snapshot shows 4 of 6 tests passing, with <code>deleteNode()</code> and <code>heightBalance()</code> remaining.
+                  {chronicle.heroStory?.bodyParagraph1 || 'The campus came alive this week as students gathered for the annual fest — music performances, food stalls, art exhibitions and inter-college competitions across three days.'}
                 </p>
                 <p className="newspaper-lead-in">
-                  <span className="newspaper-dateline">TURING HALL, OCT. 1 —</span>
-                  Today’s 1:00 PM seminar in Room 302 will walk through structural induction proofs and right-left AVL rotations. Students unable to attend in person may join the synchronous WebRTC classroom or review the annotated lecture transcript with the Socratic AI Tutor.
+                  <span className="newspaper-dateline">{chronicle.heroStory?.datelineText || 'CAMPUS, THIS WEEK —'} </span>
+                  {chronicle.heroStory?.bodyParagraph2 || 'Organisers have released the full event list with venues and timings. Browse the fest photo gallery below and check the events calendar for upcoming programmes.'}
                 </p>
               </div>
 
-              {/* Hero Article Action Bar */}
+              {/* Hero Article Action Bar — newspaper only */}
               <div className="flex flex-wrap items-center gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => onNavigate('live-learning')}
+                  onClick={() => setSelectedEditionSection('Photo Gallery')}
                   className="px-4 py-2 bg-stone-900 hover:bg-[#1E3A8A] text-white text-xs font-mono uppercase tracking-wider font-semibold transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  Join Live Class (1:00 PM)
+                  {chronicle.heroStory?.action1Text || 'View Fest Photos'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => onNavigate('course-detail', 'cs-201')}
+                  onClick={() => onNavigate('calendar')}
                   className="px-4 py-2 bg-[#FBF9F5] border border-stone-900 text-stone-900 text-xs font-medium hover:bg-stone-100 transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  Open CS 201 Course
+                  {chronicle.heroStory?.action2Text || 'Fest Schedule'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => onNavigate('ai-tutor')}
+                  onClick={() => setSelectedEditionSection('General')}
                   className="px-4 py-2 bg-[#FBF9F5] border border-stone-900 text-[#1E3A8A] text-xs font-medium hover:bg-stone-100 transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  Launch Socratic AI Tutor
+                  {chronicle.heroStory?.action3Text || 'General News'}
                 </button>
               </div>
             </article>
+
+            {/* ================================================================
+                KRISTU JAYANTI UNIVERSITY PHOTOGRAPHIC CHRONICLE & CAMPUS DISPATCHES
+               ================================================================ */}
+            {(() => {
+              const photos = (chronicle.campusPhotos && chronicle.campusPhotos.length > 0)
+                ? chronicle.campusPhotos
+                : KRISTU_JAYANTI_CAMPUS_PHOTOS;
+              const safeIndex = activeCampusPhotoIndex < photos.length ? activeCampusPhotoIndex : 0;
+              const curPhoto = photos[safeIndex] || photos[0];
+
+              return (
+                <section className="p-4 bg-[#FAF8F5] border-2 border-stone-900 shadow-[3px_3px_0px_#141210] space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-stone-900 pb-2">
+                    <div className="flex items-center gap-2.5">
+                      <Camera className="w-5 h-5 text-[#1E3A8A]" />
+                      <div>
+                        <div className="text-[10px] font-mono uppercase tracking-widest text-[#1E3A8A] font-bold">
+                          FEST PHOTO ARCHIVES · KRISTU JAYANTI UNIVERSITY
+                        </div>
+                        <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-950">
+                          Fest Photo Gallery & General Highlights
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs font-mono text-stone-600 bg-white px-2.5 py-1 border border-stone-300">
+                        {curPhoto?.location || 'Bengaluru · K. Narayanapura Campus'}
+                      </div>
+                      {/* Manage Photos removed from student view — admin only */}
+                    </div>
+                  </div>
+
+                  {/* Featured Campus Photo */}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                    <div className="md:col-span-8 overflow-hidden border-2 border-stone-900 bg-black relative group">
+                      <img
+                        src={curPhoto?.imageUrl || ASSETS.kjuCampusMain}
+                        alt={curPhoto?.title || 'Kristu Jayanti University Campus'}
+                        className="w-full h-64 sm:h-72 object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      {curPhoto?.highlight && (
+                        <div className="absolute top-2 left-2 bg-[#141210]/85 text-white text-[10px] font-mono font-bold px-2 py-0.5 uppercase tracking-wider backdrop-blur-xs">
+                          {curPhoto.highlight}
+                        </div>
+                      )}
+                      <div className="p-2.5 bg-[#141210] text-white text-xs font-mono flex flex-wrap items-center justify-between gap-2 border-t border-stone-800">
+                        <span className="font-bold flex items-center gap-1.5 truncate">
+                          <ImageIcon className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          {curPhoto?.title}
+                        </span>
+                        <span className="text-stone-300 text-[11px] flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-red-400 shrink-0" />
+                          {curPhoto?.location}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Photo Selector Thumbnails */}
+                    <div className="md:col-span-4 space-y-2">
+                      <div className="text-[11px] font-mono text-stone-600 font-bold uppercase tracking-wider">
+                        Select Fest Photograph ({photos.length}):
+                      </div>
+                      <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                        {photos.map((photo, idx) => (
+                          <button
+                            key={photo.id || `photo-${idx}`}
+                            type="button"
+                            onClick={() => setActiveCampusPhotoIndex(idx)}
+                            className={`w-full text-left p-2 border transition-all cursor-pointer flex items-center gap-2.5 ${
+                              safeIndex === idx
+                                ? 'bg-[#1E3A8A] text-white border-[#141210] shadow-[2px_2px_0px_#141210]'
+                                : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-100'
+                            }`}
+                          >
+                            <img
+                              src={photo.imageUrl}
+                              alt={photo.title}
+                              className="w-12 h-10 object-cover border border-stone-400 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-serif text-xs font-bold truncate">
+                                {photo.title}
+                              </div>
+                              <div
+                                className={`text-[10px] font-mono truncate ${
+                                  safeIndex === idx ? 'text-blue-100' : 'text-stone-500'
+                                }`}
+                              >
+                                {photo.category}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 bg-white border border-stone-300 text-xs font-serif text-stone-800 italic">
+                    “{curPhoto?.caption}”
+                  </div>
+                </section>
+              );
+            })()}
 
             {/* SECONDARY ANNOUNCEMENT DISPATCHES (2-COLUMN BROADSHEET SPLIT BELOW THE FOLD) */}
             <section className="space-y-4">
@@ -594,149 +590,92 @@ ${ASSIGNMENTS.map(
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:divide-x sm:divide-stone-300">
-                <article className="space-y-2.5">
-                  <div className="text-[11px] font-mono text-[#1E3A8A] font-semibold">
-                    ACADEMIC SENATE & REGISTRAR
-                  </div>
-                  <h3
-                    style={{ fontFamily: 'var(--font-serif)' }}
-                    className="newspaper-subheadline text-stone-950"
-                  >
-                    Spring 2027 Priority Course Registration Opens October 19; CS 310 Recommended
-                  </h3>
-                  <p className="newspaper-lead-in">
-                    <span className="newspaper-dateline">REGISTRAR’S DESK —</span>
-                    With 72 of 120 credits completed (60% degree progress) and an A- standing in CS 201, the AI Degree Audit engine recommends pre-bookmarking <strong>CS 310 — Algorithms & Complexity</strong> and <strong>CS 340 — Operating Systems</strong>.
-                  </p>
-                  <div className="pt-1 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => onNavigate('academic-progress')}
-                      className="text-xs font-mono font-semibold text-stone-900 hover:text-[#1E3A8A] underline cursor-pointer"
+                {(chronicle.announcements && chronicle.announcements.length > 0
+                  ? chronicle.announcements
+                  : DEFAULT_CHRONICLE_CONFIG.announcements
+                ).map((ann, aIdx) => (
+                  <article key={ann.id || `ann-${aIdx}`} className={`space-y-2.5 ${aIdx > 0 ? 'sm:pl-6' : ''}`}>
+                    <div className="text-[11px] font-mono text-[#1E3A8A] font-semibold uppercase">
+                      {ann.category}
+                    </div>
+                    <h3
+                      style={{ fontFamily: 'var(--font-serif)' }}
+                      className="newspaper-subheadline text-stone-950"
                     >
-                      Inspect Degree Audit →
-                    </button>
-                  </div>
-                </article>
-
-                <article className="sm:pl-6 space-y-2.5">
-                  <div className="text-[11px] font-mono text-stone-600 font-semibold">
-                    CAMPUS SYMPOSIUM & ARCHIVES
-                  </div>
-                  <h3
-                    style={{ fontFamily: 'var(--font-serif)' }}
-                    className="newspaper-subheadline text-stone-950"
-                  >
-                    Zanzee Fall Convocation & Grand Library Monograph Exhibition This Week
-                  </h3>
-                  <p className="newspaper-lead-in">
-                    <span className="newspaper-dateline">GRAND LIBRARY —</span>
-                    The Zanzee Special Collections Reading Room has digitized early 1962 Adelson-Velsky & Landis tree manuscripts alongside IEEE/ACM full-text citations for ENG 105 and CS 201 research papers.
-                  </p>
-                  <div className="pt-1 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => onNavigate('library')}
-                      className="text-xs font-mono font-semibold text-stone-900 hover:text-[#1E3A8A] underline cursor-pointer"
-                    >
-                      Explore Digital Library →
-                    </button>
-                  </div>
-                </article>
+                      {ann.title}
+                    </h3>
+                    <p className="newspaper-lead-in">
+                      {ann.dateline && <span className="newspaper-dateline">{ann.dateline} </span>}
+                      {ann.summary}
+                    </p>
+                    <div className="pt-1 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => onNavigate((ann.actionView || 'academic-progress') as ViewId)}
+                        className="text-xs font-mono font-semibold text-stone-900 hover:text-[#1E3A8A] underline cursor-pointer"
+                      >
+                        {ann.actionLabel || 'Inspect Details →'}
+                      </button>
+                    </div>
+                  </article>
+                ))}
               </div>
             </section>
 
-            {/* ENROLLED COURSES EDITORIAL LEDGER TABLE */}
-            <section className="border-t-2 border-stone-900 pt-5 space-y-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2
-                  style={{ fontFamily: 'var(--font-serif)' }}
-                  className="newspaper-section-header text-stone-950"
-                >
-                  01. Fall 2026 Enrolled Course Standings
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('courses')}
-                  className="text-xs font-mono text-[#1E3A8A] hover:underline cursor-pointer shrink-0"
-                >
-                  Full Course Catalog →
-                </button>
+            {/* KRISTU JAYANTI INSTITUTE OF TECHNOLOGY ADMISSIONS DISPATCH */}
+            <section className="p-4 bg-[#FAF8F5] border-2 border-stone-900 shadow-[3px_3px_0px_#141210] space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-300 pb-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#1E3A8A]">
+                    OFFICIAL ADMISSION NOTICE · 2026–27 BATCH
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono text-stone-500">
+                  Postgraduate Dept. of Computer Science
+                </span>
               </div>
 
-              <div className="overflow-x-auto border border-stone-900">
-                <table className="w-full text-left border-collapse text-xs tabular-nums">
-                  <thead>
-                    <tr className="border-b border-stone-900 bg-[#FBF9F5] font-mono text-[11px] text-stone-700">
-                      <th className="py-2.5 px-3">COURSE</th>
-                      <th className="py-2.5 px-3">INSTRUCTOR & NEXT SESSION</th>
-                      <th className="py-2.5 px-3 text-right">PROGRESS</th>
-                      <th className="py-2.5 px-3 text-right">STANDING</th>
-                      <th className="py-2.5 px-3 text-right">DISPATCH</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-300">
-                    {COURSES.map((course) => (
-                      <tr key={course.id} className="hover:bg-[#FBF9F5]">
-                        <td className="py-3 px-3 align-top">
-                          <div className="font-mono font-bold text-stone-900">{course.code}</div>
-                          <div
-                            style={{ fontFamily: 'var(--font-serif)' }}
-                            className="font-bold text-sm text-stone-900"
-                          >
-                            {course.title}
-                          </div>
-                        </td>
-                        <td className="py-3 px-3 align-top text-stone-600">
-                          <div className="text-stone-900 font-medium">{course.professor}</div>
-                          <div>{course.nextClass} · {course.room}</div>
-                        </td>
-                        <td className="py-3 px-3 align-top text-right font-mono">
-                          {course.progress}%
-                        </td>
-                        <td className="py-3 px-3 align-top text-right font-mono font-bold text-stone-900">
-                          {course.currentGrade} ({course.numericScore}%)
-                        </td>
-                        <td className="py-3 px-3 align-top text-right whitespace-nowrap space-x-2">
-                          <button
-                            type="button"
-                            onClick={() => onNavigate('course-detail', course.id)}
-                            className="font-mono font-semibold text-[#1E3A8A] hover:underline cursor-pointer"
-                          >
-                            Open
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onAskAI(
-                                `Tell me about my upcoming deliverables and current standing in ${course.code} (${course.title}).`
-                              )
-                            }
-                            className="font-mono text-stone-700 hover:text-stone-950 underline cursor-pointer"
-                          >
-                            Ask AI
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h3
+                    style={{ fontFamily: 'var(--font-serif)' }}
+                    className="font-bold text-lg text-stone-950"
+                  >
+                    Kristu Jayanti Institute of Technology — MCA & M.Sc Admissions Open
+                  </h3>
+                  <p className="text-xs text-stone-700 max-w-2xl leading-relaxed">
+                    Admissions are open for 2-year full-time postgraduate programmes: <strong>MCA</strong> (₹1,90,000/yr), <strong>M.Sc. Data Science</strong> (₹1,40,000/yr), and <strong>M.Sc. Cyber Security</strong> (₹1,50,000/yr). Review eligibility guidelines and fee structures.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('admissions')}
+                    className="px-3.5 py-1.5 bg-[#141210] hover:bg-[#1E3A8A] text-white text-xs font-mono font-bold uppercase transition-colors cursor-pointer shadow-[1px_1px_0px_#141210]"
+                  >
+                    View Admissions →
+                  </button>
+                </div>
               </div>
             </section>
+
+            {/* Courses table removed — newspaper shows fests / photos / general news only */}
           </div>
 
           {/* ================================================================
-              RIGHT SIDEBAR COLUMN (3 COLS): SCHEDULED EVENTS & AI RECOMMENDATIONS
-             ================================================================ */}
+              RIGHT SIDEBAR COLUMN (3 COLS): FEST & EVENTS CALENDAR ONLY
+              ================================================================ */}
           <aside className="lg:col-span-3 lg:pl-6 space-y-6">
-            {/* Today's & Upcoming Schedule Column */}
+            {/* Fest & Events Calendar — general fest info only */}
             <div className="space-y-3">
               <div className="border-t-2 border-b border-stone-900 py-2 flex items-baseline justify-between gap-2">
                 <h2
                   style={{ fontFamily: 'var(--font-serif)' }}
                   className="newspaper-section-header text-stone-950"
                 >
-                  Campus Calendar
+                  Fest & Events Calendar
                 </h2>
                 <button
                   type="button"
@@ -748,11 +687,11 @@ ${ASSIGNMENTS.map(
               </div>
 
               <div className="divide-y divide-stone-300">
-                {CALENDAR_EVENTS.slice(0, 5).map((ev) => (
+                {CALENDAR_EVENTS.filter((ev) => ev.type === 'Campus Event').slice(0, 5).map((ev) => (
                   <div key={ev.id} className="py-2.5 first:pt-0 space-y-1">
                     <div className="flex items-center justify-between text-[11px] font-mono text-stone-500 tabular-nums">
                       <span className="font-semibold text-stone-800">{ev.date}</span>
-                      <span>{ev.type.toUpperCase()}</span>
+                      <span>FEST & EVENT</span>
                     </div>
                     <h3
                       style={{ fontFamily: 'var(--font-serif)' }}
@@ -769,183 +708,50 @@ ${ASSIGNMENTS.map(
 
               <button
                 type="button"
-                onClick={() => onAskAI('What is my schedule today and are there any upcoming exams?')}
+                onClick={() => onNavigate('calendar')}
                 className="w-full py-2 px-3 bg-[#FBF9F5] border border-stone-900 text-stone-900 text-xs font-mono font-semibold hover:bg-stone-900 hover:text-white transition-colors cursor-pointer"
               >
-                Ask AI About My Schedule
+                View Full Fest Calendar
               </button>
             </div>
 
-            {/* Personalized Course Recommendation Engine Section */}
+            {/* Course recommendations removed — newspaper shows fests / photos / general only */}
             <div className="space-y-3.5">
               <div className="border-t-2 border-b border-stone-900 py-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-[10px] font-mono font-bold text-[#1E3A8A] uppercase">
-                    DEGREE AUDIT & ADVISING ENGINE
-                  </div>
-                  <span className="text-[10px] font-mono tabular-nums text-stone-600">SPRING 2027</span>
+                <div className="text-[10px] font-mono font-bold text-[#1E3A8A] uppercase">
+                  FEST & GENERAL NOTICEBOARD
                 </div>
                 <h2
                   style={{ fontFamily: 'var(--font-serif)' }}
                   className="newspaper-section-header text-stone-950 mt-0.5"
                 >
-                  02. Course Recommendations
+                  More From Campus
                 </h2>
                 <div className="text-[11px] text-stone-600 mt-1 leading-snug">
-                  Analyzed from <strong>{STUDENT_PERSONA.creditsCompleted}/120 credits</strong>, <strong>{STUDENT_PERSONA.gpa} GPA</strong>, and stated interests.
+                  Fest announcements, photo highlights and general campus news.
                 </div>
               </div>
 
-              {/* Stated Interests Bar & Quick Filter Ribbon */}
+              {/* General fest info box */}
               <div className="space-y-2 bg-[#E6DEC8] p-2.5 border border-stone-900 text-xs">
-                <div className="flex items-center justify-between text-[11px] font-mono text-stone-800">
-                  <span className="font-bold flex items-center gap-1">
-                    <Tag className="w-3 h-3 text-[#6E261A]" />
-                    <span>YOUR STATED INTERESTS</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setInterestsModalOpen(true)}
-                    className="text-[#1E3A8A] font-semibold underline hover:text-stone-950 cursor-pointer"
-                  >
-                    Edit ({selectedInterests.length})
-                  </button>
+                <div className="text-[11px] font-mono text-stone-800 font-bold">
+                  FEST & GENERAL UPDATES
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {selectedInterests.slice(0, 3).map((item) => (
-                    <span
-                      key={item}
-                      className="px-2 py-0.5 text-[10px] font-mono bg-[#F5F0E6] border border-stone-400 text-stone-800 truncate max-w-[170px]"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                  {selectedInterests.length > 3 && (
-                    <button
-                      type="button"
-                      onClick={() => setInterestsModalOpen(true)}
-                      className="px-1.5 py-0.5 text-[10px] font-mono bg-stone-300 border border-stone-400 text-stone-800 hover:bg-stone-400 cursor-pointer"
-                    >
-                      +{selectedInterests.length - 3} more
-                    </button>
-                  )}
-                </div>
-
-                {/* Category Filter Pills */}
-                <div className="flex flex-wrap gap-1 pt-1 border-t border-stone-400/60">
-                  {(['All', 'Major Core', 'General Education', 'By Interest'] as const).map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setRecCategoryFilter(cat)}
-                      className={`px-2 py-0.5 text-[10px] font-mono transition-colors cursor-pointer ${
-                        recCategoryFilter === cat
-                          ? 'bg-[#141210] text-[#F5F0E6] font-bold'
-                          : 'bg-[#F5F0E6] text-stone-800 border border-stone-400 hover:bg-stone-200'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recommendations Feed with Explanations */}
-              <div className="divide-y divide-stone-300">
-                {currentRecommendations.slice(0, 4).map((rec) => {
-                  const isPlanned = plannedCourseIds.includes(rec.courseId);
-                  return (
-                    <div key={rec.id} className="py-3 first:pt-0 last:pb-0 space-y-2">
-                      <div className="flex items-center justify-between text-[11px] font-mono">
-                        <span className="font-bold text-[#1E3A8A]">{rec.code}</span>
-                        <span className="px-1.5 py-0.5 text-[10px] font-bold bg-[#141210] text-[#F5F0E6]">
-                          {rec.matchScore}% FIT
-                        </span>
-                      </div>
-
-                      <h3
-                        style={{ fontFamily: 'var(--font-serif)' }}
-                        className="newspaper-subheadline text-stone-950"
-                      >
-                        {rec.title}
-                      </h3>
-
-                      <div className="flex items-center gap-1.5 text-[10px] font-mono text-stone-600">
-                        <span className="px-1.5 py-0.5 bg-stone-200 border border-stone-300 font-semibold">
-                          {rec.category}
-                        </span>
-                        <span>·</span>
-                        <span>{rec.credits} Credits</span>
-                        <span>·</span>
-                        <span>{rec.schedule}</span>
-                      </div>
-
-                      {/* Brief Explanation Banner Required by Spec */}
-                      <div className="p-2 border-l-2 border-[#6E261A] bg-[#E6DEC8] text-xs leading-relaxed space-y-0.5">
-                        <span className="font-mono text-[10px] uppercase font-bold text-[#6E261A] block">
-                          WHY RECOMMENDED:
-                        </span>
-                        <p className="text-[11px] font-serif italic text-stone-900">
-                          “{rec.explanation}”
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2 pt-0.5">
-                        <button
-                          type="button"
-                          onClick={() => togglePlannedCourse(rec.courseId, rec.code)}
-                          className={`px-2.5 py-1 text-xs font-mono font-semibold transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1 ${
-                            isPlanned
-                              ? 'bg-emerald-900 text-white'
-                              : 'bg-stone-900 text-[#F5F0E6] hover:bg-[#6E261A]'
-                          }`}
-                        >
-                          {isPlanned ? (
-                            <>
-                              <Check className="w-3 h-3" />
-                              <span>Planned ✓</span>
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="w-3 h-3" />
-                              <span>Add to Plan</span>
-                            </>
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onAskAI(
-                              `Why is ${rec.code} (${rec.title}) recommended for my Computer Science degree plan, and how does it fit with my 72 completed credits?`
-                            )
-                          }
-                          className="text-xs font-mono text-stone-700 hover:text-stone-950 underline cursor-pointer"
-                        >
-                          Ask AI Why →
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Footer Degree Audit Deep Link */}
-              <div className="pt-2 border-t border-stone-300">
+                <p className="text-xs text-stone-700 leading-relaxed">
+                  Cultural fests, competitions, exhibitions and general campus programmes are listed in the Fest & Events Calendar. Photos appear in the Fest Photo Gallery.
+                </p>
                 <button
                   type="button"
-                  onClick={() => onNavigate('academic-progress')}
-                  className="w-full py-2 px-3 bg-[#E6DEC8] border border-stone-900 text-stone-900 text-xs font-mono font-bold hover:bg-stone-900 hover:text-[#F5F0E6] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  onClick={() => onNavigate('calendar')}
+                  className="w-full py-2 px-3 bg-stone-900 text-[#F5F0E6] text-xs font-mono font-bold hover:bg-[#6E261A] transition-colors cursor-pointer"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#6E261A]" />
-                  <span>Open Full Degree Audit Engine</span>
-                  <ArrowRight className="w-3 h-3" />
+                  Open Fest Calendar →
                 </button>
               </div>
             </div>
 
-            {/* Manage Stated Interests Modal */}
-            {interestsModalOpen && (
+            {/* Interests modal disabled — newspaper only */}
+            {false && interestsModalOpen && (
               <div
                 className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
                 role="dialog"
@@ -1058,7 +864,17 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
   onAskAI,
   onShowToast,
 }) => {
+  const [coursesList, setCoursesList] = useState<Course[]>(getStoredCourses);
   const [activeCourseId, setActiveCourseId] = useState<string | null>(selectedCourseId || null);
+
+  useEffect(() => {
+    const handleCoursesUpdate = () => {
+      setCoursesList(getStoredCourses());
+    };
+    window.addEventListener('kjit_courses_updated', handleCoursesUpdate);
+    return () => window.removeEventListener('kjit_courses_updated', handleCoursesUpdate);
+  }, []);
+
   const [activeTab, setActiveTab] = useState<
     'Overview' | 'Content' | 'Assignments' | 'Grades' | 'Discussions' | 'AI Tutor'
   >('Overview');
@@ -1068,7 +884,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
   );
   const [tutorLoading, setTutorLoading] = useState(false);
 
-  const selectedCourse: Course | undefined = COURSES.find((c) => c.id === activeCourseId);
+  const selectedCourse: Course | undefined = coursesList.find((c) => c.id === activeCourseId);
 
   const triggerCourseTutor = async (action: 'explain' | 'hint' | 'example' | 'quiz' | 'custom', customText?: string) => {
     setTutorLoading(true);
@@ -1096,7 +912,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
       <div className="space-y-6">
         <div className="border-b border-stone-300 pb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="text-xs font-mono text-stone-500">ZANZEE COLLEGE LMS · FALL 2026</div>
+            <div className="text-xs font-mono text-stone-500">KRISTU JAYANTI INSTITUTE OF TECHNOLOGY LMS · FALL 2026</div>
             <h1 className="font-serif text-3xl font-bold text-stone-900">My Courses</h1>
           </div>
           <button
@@ -1109,7 +925,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {COURSES.map((course) => (
+          {coursesList.map((course) => (
             <div key={course.id} className="bg-white border border-stone-300 p-6 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs font-mono text-stone-500 tabular-nums">
@@ -1397,7 +1213,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
                 Study Group Thread: Recurrence Relations & Master Theorem
               </div>
               <p className="text-stone-600">
-                Meeting tonight at 7:30 PM in the Zanzee Grand Reading Room Mezzanine.
+                Meeting tonight at 7:30 PM in the Central Reading Room Mezzanine.
               </p>
               <div className="text-stone-500 font-mono">8 student replies · Updated 3 hours ago</div>
             </div>
@@ -1543,7 +1359,7 @@ export const AITutorView: React.FC<SharedNavProps> = ({ onShowToast }) => {
               }`}
             >
               <div className="text-[11px] font-mono opacity-75 mb-1">
-                {entry.role === 'student' ? 'ALEX MORGAN' : 'ZANZEE SOCRATIC AI TUTOR'}
+                {entry.role === 'student' ? 'ALEX MORGAN' : 'KRISTU JAYANTI SOCRATIC AI TUTOR'}
               </div>
               <div className="text-sm leading-relaxed whitespace-pre-line">{entry.content}</div>
             </div>
@@ -1603,7 +1419,7 @@ export const LiveLearningView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-300 pb-4">
         <div>
           <div className="text-xs font-mono text-[#1E3A8A]">
-            ZANZEE SYNCHRONOUS & ARCHIVAL MEDIA STUDIO
+            KRISTU JAYANTI SYNCHRONOUS & ARCHIVAL MEDIA STUDIO
           </div>
           <h1 className="font-serif text-3xl font-bold text-stone-900">
             Live Learning & Lecture VOD
@@ -1917,7 +1733,7 @@ export const AssignmentsView: React.FC<SharedNavProps> = ({ onNavigate, onShowTo
         };
       })
     );
-    onShowToast('Saved assignment progress to Zanzee LMS');
+    onShowToast('Saved assignment progress to KJIT LMS');
   };
 
   return (
@@ -2017,7 +1833,7 @@ export const CalendarView: React.FC<SharedNavProps> = ({ onAskAI, onShowToast })
     <div className="space-y-6">
       <div className="border-b border-stone-300 pb-4 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-xs font-mono text-stone-500">ZANZEE REGISTRAR TIMETABLE · OCTOBER 2026</div>
+          <div className="text-xs font-mono text-stone-500">KRISTU JAYANTI REGISTRAR TIMETABLE · OCTOBER 2026</div>
           <h1 className="font-serif text-3xl font-bold text-stone-900">Academic Calendar</h1>
         </div>
 
@@ -2181,7 +1997,7 @@ export const AcademicProgressView: React.FC<SharedNavProps> = ({ onAskAI, onShow
       <div className="border-b-2 border-stone-900 pb-4 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="text-xs font-mono text-[#1E3A8A] font-bold">
-            ZANZEE COLLEGE REGISTRAR · DEGREE AUDIT & GRADUATION INTELLIGENCE
+            KRISTU JAYANTI INSTITUTE OF TECHNOLOGY REGISTRAR · DEGREE AUDIT & GRADUATION INTELLIGENCE
           </div>
           <h1
             style={{ fontFamily: 'var(--font-serif)' }}
@@ -2230,7 +2046,7 @@ export const AcademicProgressView: React.FC<SharedNavProps> = ({ onAskAI, onShow
               Overall Degree Standing
             </h2>
             <p className="text-xs text-stone-700 leading-relaxed max-w-xs">
-              72 Credits Completed · 48 Credits Remaining · Required for B.Sc. Computer Science: 120.0 Credits.
+              72 Credits Completed · 48 Credits Remaining · Required for MCA (Division D · 26MCAD30): 120.0 Credits.
             </p>
           </div>
         </div>
@@ -2254,7 +2070,7 @@ export const AcademicProgressView: React.FC<SharedNavProps> = ({ onAskAI, onShow
               note: '20 Credits remaining (CS 310, CS 340, Senior Capstone)',
             },
             {
-              label: 'Zanzee Broadsheet General Education Core',
+              label: 'Kristu Jayanti Broadsheet General Education Core',
               done: STUDENT_PERSONA.degreeAudit.generalEducationCompleted,
               total: STUDENT_PERSONA.degreeAudit.generalEducationTotal,
               note: '10 Credits remaining (Ethics & Humanities, Arts/Typography, Natural Science)',
@@ -2517,7 +2333,7 @@ export const AcademicProgressView: React.FC<SharedNavProps> = ({ onAskAI, onShow
                     type="button"
                     onClick={() =>
                       onAskAI(
-                        `Explain why ${rec.code} (${rec.title}) was recommended for Alex Morgan based on 72 completed credits and current standing in CS 201.`
+                        `Explain why ${rec.code} (${rec.title}) was recommended for Parth Pimplapure (26MCAD30, MCA Division D) based on 72 completed credits and current standing in CS 201.`
                       )
                     }
                     className="px-3 py-2 bg-[#E6DEC8] border border-stone-900 text-stone-900 text-xs font-mono font-semibold hover:bg-stone-900 hover:text-white transition-colors cursor-pointer"
@@ -2535,8 +2351,18 @@ export const AcademicProgressView: React.FC<SharedNavProps> = ({ onAskAI, onShow
 };
 
 export const GradesView: React.FC<SharedNavProps> = () => {
+  const [coursesList, setCoursesList] = useState<Course[]>(getStoredCourses);
   const [selectedCourseId, setSelectedCourseId] = useState<string>('cs-201');
-  const activeCourse = COURSES.find((c) => c.id === selectedCourseId) || COURSES[0];
+
+  useEffect(() => {
+    const handleCoursesUpdate = () => {
+      setCoursesList(getStoredCourses());
+    };
+    window.addEventListener('kjit_courses_updated', handleCoursesUpdate);
+    return () => window.removeEventListener('kjit_courses_updated', handleCoursesUpdate);
+  }, []);
+
+  const activeCourse = coursesList.find((c) => c.id === selectedCourseId) || coursesList[0];
 
   return (
     <div className="space-y-6">
@@ -2551,7 +2377,7 @@ export const GradesView: React.FC<SharedNavProps> = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {COURSES.map((c) => (
+        {coursesList.map((c) => (
           <button
             key={c.id}
             type="button"

@@ -89,7 +89,7 @@
   filter: grayscale(20%) sepia(15%) contrast(1.04);
 }
 
-/* Zanzee College Chronicle — Newspaper Typographic Scale */
+/* The Kristu Chronicle — Newspaper Typographic Scale */
 .newspaper-masthead {
   font-family: var(--font-serif);
   font-size: clamp(2.5rem, 4.5vw, 4.25rem);

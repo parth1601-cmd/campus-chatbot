@@ -4,6 +4,8 @@ export type ViewId =
   // Student Views
   | 'dashboard'
   | 'ai-assistant'
+  | 'admissions'
+  | 'faculty-directory'
   | 'courses'
   | 'course-detail'
   | 'ai-tutor'
@@ -27,6 +29,7 @@ export type ViewId =
   | 'faculty-ai'
   // Admin Views
   | 'admin-dashboard'
+  | 'admin-chronicle'
   | 'admin-ai'
   | 'admin-observability'
   | 'admin-compliance'

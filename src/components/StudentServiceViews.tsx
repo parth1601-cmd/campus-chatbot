@@ -36,7 +36,7 @@ export const FinancialAidView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fileName: 'Zanzee_Proof_of_Enrollment_Fall2026.pdf',
+          fileName: 'KJIT_Proof_of_Enrollment_Fall2026.pdf',
           documentType: 'Proof of Enrollment (Form FA-104)',
         }),
       });
@@ -145,7 +145,7 @@ export const FinancialAidView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
               <div className="text-xs font-mono text-stone-500">AWARDED SCHOLARSHIPS & GRANTS</div>
               <div className="divide-y divide-stone-200 border-t border-b border-stone-200 text-xs tabular-nums">
                 <div className="py-2.5 flex justify-between">
-                  <span className="font-medium text-stone-900">Zanzee Presidential Merit Scholarship</span>
+                  <span className="font-medium text-stone-900">Kristu Jayanti Presidential Merit Scholarship</span>
                   <span className="font-mono font-semibold text-stone-900">$14,500.00 / yr</span>
                 </div>
                 <div className="py-2.5 flex justify-between">
@@ -184,7 +184,7 @@ export const FinancialAidView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
                 disabled={balancePaid}
                 onClick={() => {
                   setBalancePaid(true);
-                  onShowToast('Tuition payment of $1,850.00 processed via Zanzee Bursar');
+                  onShowToast('Tuition payment of $1,850.00 processed via Kristu Jayanti Bursar');
                 }}
                 className="px-4 py-2 bg-[#1E3A8A] text-white text-xs font-medium cursor-pointer disabled:opacity-60"
               >
@@ -241,7 +241,7 @@ export const CampusServicesView: React.FC<SharedNavProps> = ({ onAskAI, onShowTo
   return (
     <div className="space-y-6">
       <div className="border-b border-stone-300 pb-4">
-        <div className="text-xs font-mono text-stone-500">ZANZEE COLLEGE DIRECTORY</div>
+        <div className="text-xs font-mono text-stone-500">KRISTU JAYANTI INSTITUTE OF TECHNOLOGY DIRECTORY</div>
         <h1 className="font-serif text-3xl font-bold text-stone-900">Campus Services</h1>
       </div>
 
@@ -312,7 +312,7 @@ export const ITSupportView: React.FC<SharedNavProps> = ({ onShowToast }) => {
   const [tickets, setTickets] = useState([
     {
       id: 'IT-9042',
-      subject: 'Zanzee-Secure 802.1X RADIUS Certificate Renewal',
+      subject: 'KJIT-Secure 802.1X RADIUS Certificate Renewal',
       status: 'Open · Assigned to Tier 2 Network Ops',
       created: 'Today',
     },
@@ -320,37 +320,37 @@ export const ITSupportView: React.FC<SharedNavProps> = ({ onShowToast }) => {
 
   const solutions: Record<string, { diagnosis: string; steps: string[] }> = {
     'Reset password': {
-      diagnosis: 'Zanzee Active Directory & Okta SSO Password Synchronization',
+      diagnosis: 'Kristu Jayanti Active Directory & Okta SSO Password Synchronization',
       steps: [
         'Verify your identity via Okta Verify Push or hardware YubiKey.',
-        'Set a 14+ character passphrase at id.zanzee.edu/reset.',
+        'Set a 14+ character passphrase at id.kjit.edu.in/reset.',
         'Wait 90 seconds for Kerberos token propagation across LMS and eduroam.',
       ],
     },
     'Wi-Fi isn’t working': {
-      diagnosis: 'October 2026 RADIUS Certificate Rotation on Zanzee-Secure',
+      diagnosis: 'October 2026 RADIUS Certificate Rotation on KJIT-Secure',
       steps: [
-        'Open Wireless Network Preferences and select "Forget This Network" for Zanzee-Secure.',
-        'Reconnect using your full university email (amorgan@zanzee.edu).',
-        'Accept the new auth.zanzee.edu Root CA certificate when prompted.',
+        'Open Wireless Network Preferences and select "Forget This Network" for KJIT-Secure.',
+        'Reconnect using your full university email (ppimplapure@kjit.edu.in).',
+        'Accept the new auth.kjit.edu.in Root CA certificate when prompted.',
       ],
     },
     VPN: {
-      diagnosis: 'Zanzee Split-Tunnel WireGuard / Cisco AnyConnect Gateway',
+      diagnosis: 'Kristu Jayanti Split-Tunnel WireGuard / Cisco AnyConnect Gateway',
       steps: [
-        'Connect to vpn.zanzee.edu using profile "2-Campus-Research-Split".',
+        'Connect to vpn.kjit.edu.in using profile "2-Campus-Research-Split".',
         'Approve the MFA push notification on your registered mobile device.',
       ],
     },
     'Software access': {
-      diagnosis: 'Zanzee Foundry GPU Cluster & JetBrains / MATLAB Academic License',
+      diagnosis: 'Kristu Jayanti Foundry GPU Cluster & JetBrains / MATLAB Academic License',
       steps: [
-        'Sign in with University SSO at software.zanzee.edu.',
+        'Sign in with University SSO at software.kjit.edu.in.',
         'Claim your automatic student seat token for Fall 2026.',
       ],
     },
     'Email problem': {
-      diagnosis: 'Exchange / Zanzee Mail IMAP & OAuth2 Token Refresh',
+      diagnosis: 'Exchange / KJIT Mail IMAP & OAuth2 Token Refresh',
       steps: [
         'Remove legacy Basic Auth profile and re-authenticate using Modern OAuth2 SSO.',
       ],
@@ -383,7 +383,7 @@ export const ITSupportView: React.FC<SharedNavProps> = ({ onShowToast }) => {
   return (
     <div className="space-y-6">
       <div className="bg-white border border-stone-300 p-6 space-y-4">
-        <div className="text-xs font-mono text-[#1E3A8A]">ZANZEE ENTERPRISE IT HELP DESK</div>
+        <div className="text-xs font-mono text-[#1E3A8A]">KRISTU JAYANTI ENTERPRISE IT HELP DESK</div>
         <h1 className="font-serif text-3xl font-bold text-stone-900">How can we help?</h1>
 
         <form
@@ -468,7 +468,7 @@ export const ITSupportView: React.FC<SharedNavProps> = ({ onShowToast }) => {
             </div>
           ) : step === 'ticket_created' ? (
             <div className="p-3 bg-blue-50 border border-blue-300 text-xs text-[#1E3A8A]">
-              Your issue has been escalated to Zanzee IT Support. A systems engineer will respond in Messages.
+              Your issue has been escalated to Kristu Jayanti IT Support. A systems engineer will respond in Messages.
             </div>
           ) : null}
 
@@ -533,7 +533,7 @@ export const LibraryView: React.FC<SharedNavProps> = ({ onAskAI, onShowToast }) 
       <div className="bg-white border border-stone-300 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
         <div className="lg:col-span-7 p-6 space-y-4">
           <div className="text-xs font-mono text-[#1E3A8A]">
-            ZANZEE ARCHIVAL LIBRARY & SPECIAL COLLECTIONS
+            KRISTU JAYANTI ARCHIVAL LIBRARY & SPECIAL COLLECTIONS
           </div>
           <h1 className="font-serif text-3xl font-bold text-stone-900">
             Digital Library & Citations
@@ -570,7 +570,7 @@ export const LibraryView: React.FC<SharedNavProps> = ({ onAskAI, onShowToast }) 
         <div className="lg:col-span-5 border-t lg:border-t-0 lg:border-l border-stone-300 relative min-h-[200px]">
           <img
             src={ASSETS.libraryRoom}
-            alt="Zanzee Grand Reading Room"
+            alt="Kristu Jayanti Central Reading Room"
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover"
           />
@@ -589,7 +589,7 @@ export const LibraryView: React.FC<SharedNavProps> = ({ onAskAI, onShowToast }) 
           onSubmit={(e) => {
             e.preventDefault();
             if (!researchPrompt.trim()) return;
-            onAskAI(`Help me research: ${researchPrompt} and provide APA/IEEE citations from Zanzee Library.`);
+            onAskAI(`Help me research: ${researchPrompt} and provide APA/IEEE citations from Kristu Jayanti Library.`);
           }}
           className="flex gap-2 w-full sm:w-auto"
         >
@@ -672,7 +672,7 @@ export const MessagesView: React.FC<SharedNavProps> = ({ onShowToast }) => {
                 ...t.messages,
                 {
                   id: `m-${Date.now()}`,
-                  sender: 'Alex Morgan',
+                  sender: 'Parth Pimplapure',
                   time: 'Just now',
                   body: draft.trim(),
                 },
@@ -735,7 +735,7 @@ export const MessagesView: React.FC<SharedNavProps> = ({ onShowToast }) => {
               <div
                 key={m.id}
                 className={`p-4 border text-xs leading-relaxed ${
-                  m.sender === 'Alex Morgan'
+                  m.sender === 'Parth Pimplapure'
                     ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] ml-auto max-w-lg'
                     : 'bg-[#FBF9F5] text-stone-900 border-stone-300 max-w-xl'
                 }`}
@@ -847,12 +847,12 @@ export const NotificationsAndSettingsView: React.FC<
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-5 bg-white border border-stone-300 p-6 space-y-4">
           <div className="flex items-center gap-4">
-            <img
-              src={ASSETS.avatarAlex}
-              alt="Alex Morgan"
-              referrerPolicy="no-referrer"
-              className="w-16 h-16 object-cover border border-stone-300"
-            />
+            <div
+              aria-label="Parth Pimplapure — 26MCAD30 · MCA Division D"
+              className="w-16 h-16 flex items-center justify-center bg-[#1E3A8A] text-white text-xl font-bold border border-stone-300 shrink-0"
+            >
+              PP
+            </div>
             <div>
               <h2 className="font-serif text-xl font-bold text-stone-900">{STUDENT_PERSONA.name}</h2>
               <div className="text-xs text-stone-600">{STUDENT_PERSONA.program}</div>

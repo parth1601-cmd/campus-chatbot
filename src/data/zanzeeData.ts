@@ -12,27 +12,242 @@ import {
   AssistantConversation,
 } from '../types';
 import campusQuadImg from '../assets/images/zanzee_campus_quad_1790837231247.jpg';
-import avatarAlexImg from '../assets/images/avatar_alex_morgan_1790837247015.jpg';
+import avatarParthImg from '../assets/images/avatar_alex_morgan_1790837247015.jpg';
 import courseCsImg from '../assets/images/course_cs_architecture_1790837259552.jpg';
 import libraryRoomImg from '../assets/images/zanzee_library_reading_room_1790837270358.jpg';
 
 export const ASSETS = {
   campusQuad: campusQuadImg,
-  avatarAlex: avatarAlexImg,
+  avatarParth: avatarParthImg,
+  avatarAlex: avatarParthImg,
   courseCs: courseCsImg,
   libraryRoom: libraryRoomImg,
+  kjuCampusMain: 'https://d2di5o2d0ilx7p.cloudfront.net/event-images/2025/kju-new-campus-2.jpg',
+  kjuGreenCampus: 'https://www.kristujayanti.edu.in/images/new-banners/green-campus.jpg',
+  kjuAuditorium: 'https://d2di5o2d0ilx7p.cloudfront.net/Happening-Today/03-10/01.jpg',
+  kjuGreenAward: 'https://d2di5o2d0ilx7p.cloudfront.net/event-images/2026/green-ranking-2025.jpg',
 };
 
+export interface CampusPhotoDispatch {
+  id: string;
+  title: string;
+  category: string;
+  imageUrl: string;
+  caption: string;
+  location: string;
+  highlight?: string;
+}
+
+export const KRISTU_JAYANTI_CAMPUS_PHOTOS: CampusPhotoDispatch[] = [
+  {
+    id: 'kju-main',
+    title: 'Kristu Jayanti University New Campus & Technology Complex',
+    category: 'Campus Architecture',
+    imageUrl: 'https://d2di5o2d0ilx7p.cloudfront.net/event-images/2025/kju-new-campus-2.jpg',
+    caption: 'State-of-the-art academic complexes, research wings, and technology suites at Kristu Jayanti University, Bengaluru.',
+    location: 'K. Narayanapura, Kothanur P.O., Bengaluru',
+    highlight: 'Official New Campus',
+  },
+  {
+    id: 'kju-green',
+    title: 'Lush Botanical Lawns & Eco-Centric Green Campus',
+    category: 'Sustainability',
+    imageUrl: 'https://www.kristujayanti.edu.in/images/new-banners/green-campus.jpg',
+    caption: 'Consistently ranked among the cleanest and greenest university campuses with solar power arrays and medicinal plant conservatories.',
+    location: 'Eco-Park & Main Quadrangle',
+    highlight: 'Clean & Green Campus Benchmark',
+  },
+  {
+    id: 'kju-auditorium',
+    title: 'Grand Academic Auditorium & Annual Jayantian Conclave',
+    category: 'Academic Life',
+    imageUrl: 'https://d2di5o2d0ilx7p.cloudfront.net/Happening-Today/03-10/01.jpg',
+    caption: 'High-capacity acoustically engineered auditoriums hosting international symposiums, hackathons, and postgraduate assemblies.',
+    location: 'Main Auditorium Complex',
+    highlight: 'International Research Conclave',
+  },
+  {
+    id: 'kju-ranking',
+    title: 'Green University Ranking & Institutional Accreditations',
+    category: 'Accreditation',
+    imageUrl: 'https://d2di5o2d0ilx7p.cloudfront.net/event-images/2026/green-ranking-2025.jpg',
+    caption: 'Honouring Kristu Jayanti’s highest grade institutional accreditations and environmental performance recognitions.',
+    location: 'Deemed to be University Campus',
+    highlight: 'NAAC A++ / NIRF Top Rank',
+  },
+];
+
+export interface ChronicleHeroStory {
+  badge: string;
+  locationTag: string;
+  headline: string;
+  deck: string;
+  byline: string;
+  readTime: string;
+  imageUrl: string;
+  imageCaption: string;
+  imageBadge: string;
+  bodyParagraph1: string;
+  bodyParagraph2: string;
+  datelineText: string;
+  action1Text: string;
+  action2Text: string;
+  action3Text: string;
+}
+
+export interface ChronicleUrgentAlert {
+  tag: string;
+  date: string;
+  title: string;
+  dateline: string;
+  text: string;
+  buttonText: string;
+}
+
+export interface ChronicleAnnouncementItem {
+  id: string;
+  category: string;
+  title: string;
+  dateline: string;
+  summary: string;
+  actionLabel: string;
+  actionView: string;
+}
+
+export interface ChronicleInfraWire {
+  title: string;
+  tag: string;
+  dateline: string;
+  text: string;
+  buttonText: string;
+}
+
+export interface ChronicleConfig {
+  mastheadTitle: string;
+  tagline: string;
+  institutionName: string;
+  accreditation: string;
+  dateline: string;
+  telegraphGreeting: string;
+  urgentAlert: ChronicleUrgentAlert;
+  infraWire: ChronicleInfraWire;
+  heroStory: ChronicleHeroStory;
+  campusPhotos: CampusPhotoDispatch[];
+  announcements: ChronicleAnnouncementItem[];
+}
+
+export const DEFAULT_CHRONICLE_CONFIG: ChronicleConfig = {
+  mastheadTitle: 'The Kristu Chronicle',
+  tagline: '“Fests, Photos & General Campus News — Official Student Newspaper”',
+  institutionName: 'KRISTU JAYANTI COLLEGE · AUTONOMOUS BENGALURU',
+  accreditation: 'Accredited ‘A++’ Grade by NAAC · Managed by CMI Fathers',
+  dateline: 'VOL. CXIV · NO. 42 · THURSDAY, OCTOBER 1, 2026 · MORNING EDITION',
+  telegraphGreeting: 'Fest updates, photos & general campus news.',
+  urgentAlert: {
+    tag: 'FEST BULLETIN',
+    date: 'THIS WEEK',
+    title: 'Annual College Fest — Dates Announced',
+    dateline: 'FEST DESK —',
+    text: 'The annual college fest schedule, venues and event list have been announced. Check the fest calendar for dates and the photo gallery for highlights.',
+    buttonText: 'View Fest Schedule',
+  },
+  infraWire: {
+    title: 'General Notice',
+    tag: 'CAMPUS',
+    dateline: 'CAMPUS DESK —',
+    text: 'General campus announcements, event timings and venue updates will appear here.',
+    buttonText: 'View Events Calendar →',
+  },
+  heroStory: {
+    badge: 'LEAD FEST STORY · THIS WEEK',
+    locationTag: 'MAIN CAMPUS · FEST GROUND',
+    headline: 'Annual College Fest Brings Music, Food Stalls & Inter-College Events to Campus',
+    deck: 'Three days of cultural performances, competitions and exhibitions — see full fest schedule, venues and photo highlights.',
+    byline: 'By The Kristu Chronicle · Fest Desk',
+    readTime: '3 Min Read · Campus News',
+    imageUrl: 'https://d2di5o2d0ilx7p.cloudfront.net/event-images/2025/kju-new-campus-2.jpg',
+    imageCaption: 'Fig. 1 — Fest crowd at the main campus ground during the annual college fest.',
+    imageBadge: 'Fest Photo',
+    bodyParagraph1: 'The campus came alive this week as students gathered for the annual fest — music performances, food stalls, art exhibitions and inter-college competitions across three days.',
+    bodyParagraph2: 'Organisers have released the full event list with venues and timings. Browse the fest photo gallery below and check the events calendar for upcoming programmes.',
+    datelineText: 'CAMPUS, THIS WEEK —',
+    action1Text: 'View Fest Photos',
+    action2Text: 'Fest Schedule',
+    action3Text: 'General News',
+  },
+  campusPhotos: KRISTU_JAYANTI_CAMPUS_PHOTOS,
+  announcements: [
+    {
+      id: 'ann-1',
+      category: 'FESTS & CULTURAL EVENTS',
+      title: 'Inter-College Fest Competitions: Music, Dance & Drama — Registrations Open',
+      dateline: 'FEST DESK —',
+      summary: 'Registrations are open for inter-college music, dance, drama and art competitions. Check venues and timings in the events calendar.',
+      actionLabel: 'View Fest Calendar →',
+      actionView: 'calendar',
+    },
+    {
+      id: 'ann-2',
+      category: 'GENERAL CAMPUS NEWS',
+      title: 'Campus Photo Exhibition & General Assembly This Week',
+      dateline: 'CAMPUS DESK —',
+      summary: 'A general photo exhibition of recent fests and campus programmes is on display. All students are invited to visit and view highlights.',
+      actionLabel: 'View Photo Gallery →',
+      actionView: 'dashboard',
+    },
+  ],
+};
+
+export function getStoredChronicle(): ChronicleConfig {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const data = localStorage.getItem('kjit_chronicle_config');
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (parsed && (parsed.mastheadTitle || parsed.heroStory)) {
+          return {
+            ...DEFAULT_CHRONICLE_CONFIG,
+            ...parsed,
+            urgentAlert: { ...DEFAULT_CHRONICLE_CONFIG.urgentAlert, ...(parsed.urgentAlert || {}) },
+            infraWire: { ...DEFAULT_CHRONICLE_CONFIG.infraWire, ...(parsed.infraWire || {}) },
+            heroStory: { ...DEFAULT_CHRONICLE_CONFIG.heroStory, ...(parsed.heroStory || {}) },
+            campusPhotos: Array.isArray(parsed.campusPhotos) && parsed.campusPhotos.length > 0
+              ? parsed.campusPhotos
+              : DEFAULT_CHRONICLE_CONFIG.campusPhotos,
+            announcements: Array.isArray(parsed.announcements) && parsed.announcements.length > 0
+              ? parsed.announcements
+              : DEFAULT_CHRONICLE_CONFIG.announcements,
+          };
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to read stored chronicle:', e);
+  }
+  return DEFAULT_CHRONICLE_CONFIG;
+}
+
+export function saveStoredChronicle(config: ChronicleConfig): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('kjit_chronicle_config', JSON.stringify(config));
+      window.dispatchEvent(new CustomEvent('kjit_chronicle_updated', { detail: config }));
+    }
+  } catch (e) {
+    console.error('Failed to save stored chronicle config:', e);
+  }
+}
+
 export const STUDENT_PERSONA = {
-  name: 'Alex Morgan',
-  id: 'ZC-88412',
-  email: 'amorgan@zanzee.edu',
-  program: 'B.Sc. Computer Science',
-  major: 'Computer Science',
-  minor: 'Philosophy of Technology',
-  college: 'Zanzee College • Northstar University Consortium',
+  name: 'Parth Pimplapure',
+  id: '26MCAD30',
+  email: 'ppimplapure@kjit.edu.in',
+  program: 'MCA · Division D',
+  major: 'Computer Applications',
+  minor: 'Artificial Intelligence & Systems',
+  college: 'Kristu Jayanti Institute of Technology',
   semester: 'Fall 2026',
-  year: 'Junior (Year 3)',
+  year: 'MCA Year 1 · Division D',
   advisor: 'Dr. Miriam Hawthorne',
   gpa: '3.82',
   creditsCompleted: 72,
@@ -85,7 +300,7 @@ export const COURSES: Course[] = [
         summary: 'Big-O, Omega, and Theta bounds; contiguous vs. linked pointer allocation.',
         items: [
           { id: 'm1-1', type: 'video', title: 'Lecture 1: Amortized Complexity in Dynamic Arrays', durationOrDue: '48 min', completed: true },
-          { id: 'm1-2', type: 'reading', title: 'Zanzee CS Monograph Ch. 1–2: Pointer Arithmetic', durationOrDue: '25 min read', completed: true },
+          { id: 'm1-2', type: 'reading', title: 'KJIT CS Monograph Ch. 1–2: Pointer Arithmetic', durationOrDue: '25 min read', completed: true },
           { id: 'm1-3', type: 'quiz', title: 'Asymptotic Recurrence Verification Quiz', durationOrDue: 'Score: 10/10', completed: true },
         ],
       },
@@ -156,7 +371,7 @@ export const COURSES: Course[] = [
         title: 'Graph Isomorphism & Chromatic Polynomials',
         summary: 'Eulerian circuits, Hamiltonian paths, and K-coloring bounds.',
         items: [
-          { id: 'mm3', type: 'reading', title: 'Zanzee Mathematical Gazette: Four-Color Theorem', durationOrDue: '30 min read', completed: true },
+          { id: 'mm3', type: 'reading', title: 'KJIT Mathematical Gazette: Four-Color Theorem', durationOrDue: '30 min read', completed: true },
           { id: 'mm4', type: 'assignment', title: 'Problem Set 4: Graph Coloring Proofs', durationOrDue: 'Due Oct 12', completed: false },
         ],
       },
@@ -167,7 +382,7 @@ export const COURSES: Course[] = [
     code: 'BIO 101',
     title: 'General Biology: Cellular & Genomic Foundations',
     professor: 'Professor Elena Rostova',
-    professorRole: 'Director of Zanzee Life Sciences Institute',
+    professorRole: 'Director of Kristu Jayanti Life Sciences Institute',
     department: 'Biological Sciences',
     credits: 4,
     progress: 84,
@@ -197,7 +412,7 @@ export const COURSES: Course[] = [
     code: 'ENG 105',
     title: 'Academic Writing & The Archival Broadsheet',
     professor: 'Professor Marcus Vance',
-    professorRole: 'Faculty Advisor, The Zanzee Chronicle',
+    professorRole: 'Faculty Advisor, The Kristu Jayanti Chronicle',
     department: 'Rhetoric & Humanities',
     credits: 4,
     progress: 79,
@@ -208,7 +423,7 @@ export const COURSES: Course[] = [
     nextAssignmentTitle: 'Archival Monograph Essay',
     nextAssignmentDue: 'Due Wednesday · Oct 14',
     description:
-      'Seminar in critical argumentation, primary-source archival research at Zanzee Special Collections, and long-form public scholarship.',
+      'Seminar in critical argumentation, primary-source archival research at Kristu Jayanti Special Collections, and long-form public scholarship.',
     modules: [
       {
         id: 'eng-m1',
@@ -216,13 +431,41 @@ export const COURSES: Course[] = [
         title: 'The Rhetoric of Institutional Memory',
         summary: 'Synthesizing primary manuscripts and structured citation frameworks.',
         items: [
-          { id: 'em1', type: 'reading', title: 'Zanzee Press Stylebook & Archival Citation Guide', durationOrDue: '22 min read', completed: true },
+          { id: 'em1', type: 'reading', title: 'Kristu Jayanti Press Stylebook & Archival Citation Guide', durationOrDue: '22 min read', completed: true },
           { id: 'em2', type: 'assignment', title: 'Archival Monograph Draft (2,500 words)', durationOrDue: 'Due Oct 14', completed: false },
         ],
       },
     ],
   },
 ];
+
+export function getStoredCourses(): Course[] {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const data = localStorage.getItem('kjit_courses_data');
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to read stored courses:', e);
+  }
+  return COURSES;
+}
+
+export function saveStoredCourses(courses: Course[]): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('kjit_courses_data', JSON.stringify(courses));
+      window.dispatchEvent(new CustomEvent('kjit_courses_updated', { detail: courses }));
+    }
+  } catch (e) {
+    console.error('Failed to save stored courses:', e);
+  }
+}
 
 export const ASSIGNMENTS: AssignmentItem[] = [
   {
@@ -265,7 +508,7 @@ export const ASSIGNMENTS: AssignmentItem[] = [
     id: 'asg-eng-essay',
     courseId: 'eng-105',
     courseCode: 'ENG 105',
-    title: 'Archival Monograph: History of Computing at Zanzee College',
+    title: 'Archival Monograph: History of Computing at Kristu Jayanti Institute of Technology',
     dueDate: 'Wednesday, Oct 14 · 11:59 PM',
     dueBucket: 'upcoming',
     progress: 45,
@@ -329,7 +572,7 @@ export const CALENDAR_EVENTS: CalendarEventItem[] = [
     date: 'Oct 5, 2026',
     dayOfMonth: 5,
     time: '6:00 PM',
-    location: 'Zanzee LMS Portal',
+    location: 'KJIT LMS Portal',
     type: 'Assignment',
   },
   {
@@ -364,8 +607,8 @@ export const CALENDAR_EVENTS: CalendarEventItem[] = [
   },
   {
     id: 'ev-6',
-    title: 'Zanzee Fall Convocation & Broadsheet Symposium',
-    courseOrDept: 'Zanzee College Events',
+    title: 'Kristu Jayanti Fall Convocation & Broadsheet Symposium',
+    courseOrDept: 'Kristu Jayanti College Events',
     date: 'Oct 11, 2026',
     dayOfMonth: 11,
     time: '4:00 PM – 6:30 PM',
@@ -405,7 +648,7 @@ export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
   {
     id: 'msg-2',
     sender: 'ai',
-    text: '## Answer\nYou have **3 classes tomorrow**:\n\n- **10:00 AM** — CS 201: Data Structures (Room 204)\n- **1:00 PM** — MATH 210: Discrete Mathematics (Room 108)\n- **3:00 PM** — BIO 101: General Biology (Science Building)\n\n### Next Steps\n1. Review the Week 6 Binary Tree notes before CS 201.\n2. Complete problem set draft for MATH 210.\n3. Bring laboratory safety goggles to BIO 101 in the Science Building.\n\n### Source\nAuthorized Student Schedule (Alex Morgan, #ZC-88412) & Academic Calendar 2026–27.',
+    text: '## Answer\nYou have **3 classes tomorrow**:\n\n- **10:00 AM** — CS 201: Data Structures (Room 204)\n- **1:00 PM** — MATH 210: Discrete Mathematics (Room 108)\n- **3:00 PM** — BIO 101: General Biology (Science Building)\n\n### Next Steps\n1. Review the Week 6 Binary Tree notes before CS 201.\n2. Complete problem set draft for MATH 210.\n3. Bring laboratory safety goggles to BIO 101 in the Science Building.\n\n### Source\nAuthorized Student Schedule (Parth Pimplapure, #26MCAD30) & Academic Calendar 2026–27.',
     timestamp: '9:41 AM',
     channel: 'Web Chat',
     confidence: 'high',
@@ -430,7 +673,7 @@ export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
         department: 'Office of the University Registrar',
         updatedAt: 'Updated September 20, 2026',
         version: 'SIS-Live-2026',
-        section: 'Enrolled Section Timetable (Alex Morgan)',
+        section: 'Enrolled Section Timetable (Parth Pimplapure)',
         excerpt: 'CS 201: Data Structures (10:00 AM, Room 204); MATH 210: Discrete Math (1:00 PM, Room 108); BIO 101: Biology (3:00 PM, Science Bldg).',
       },
     ],
@@ -459,7 +702,7 @@ export const DEFAULT_ASSISTANT_CONVERSATIONS: AssistantConversation[] = [
       {
         id: 'reg-msg-2',
         sender: 'ai',
-        text: '## Answer\nSwitching into your **Spring 2027 Course Registration Workflow**:\n\n- **Current Program:** B.Sc. in Computer Science (Fall 2026)\n- **Completed Credits:** **72 of 120 credits (60%)**\n- **Required Credits Remaining:** **48 credits** (20 Major Core, 10 GenEd, 18 Electives)\n- **Registration Status:** Opens **October 12 at 8:00 AM**\n\n### Available Courses & Prerequisites\nI analyzed your transcript and identified 4 recommended courses where all prerequisites are satisfied with zero schedule conflicts.\n\n### Next Steps\nPre-bookmark your selections below before your enrollment window opens.',
+        text: '## Answer\nSwitching into your **Spring 2027 Course Registration Workflow**:\n\n- **Current Program:** MCA · Division D (Fall 2026)\n- **Completed Credits:** **72 of 120 credits (60%)**\n- **Required Credits Remaining:** **48 credits** (20 Major Core, 10 GenEd, 18 Electives)\n- **Registration Status:** Opens **October 12 at 8:00 AM**\n\n### Available Courses & Prerequisites\nI analyzed your transcript and identified 4 recommended courses where all prerequisites are satisfied with zero schedule conflicts.\n\n### Next Steps\nPre-bookmark your selections below before your enrollment window opens.',
         timestamp: '10:15 AM',
         channel: 'Web Chat',
         confidence: 'high',
@@ -469,7 +712,7 @@ export const DEFAULT_ASSISTANT_CONVERSATIONS: AssistantConversation[] = [
         knowledgeLevel: 'LEVEL 1 & LEVEL 2 — Degree Audit & Course Catalog',
         cardType: 'registration',
         cardData: {
-          currentProgram: 'B.Sc. in Computer Science',
+          currentProgram: 'MCA · Division D',
           completedCredits: 72,
           requiredCredits: 120,
           remainingCredits: 48,
@@ -494,12 +737,12 @@ export const DEFAULT_ASSISTANT_CONVERSATIONS: AssistantConversation[] = [
           },
           {
             id: 'src-reg-2',
-            title: 'Computer Science Undergraduate Degree Audit',
-            department: 'Department of Computer Science',
+            title: 'Computer Applications (MCA Division D) Degree Audit',
+            department: 'Department of Computer Applications (MCA)',
             updatedAt: 'Updated September 15, 2026',
             version: 'Degree Audit v2026',
             section: 'Degree Requirements: 72/120 Credits Completed',
-            excerpt: 'Student Alex Morgan has completed 72 credits; 48 credits remain for graduation (expected May 2028).',
+            excerpt: 'Student Parth Pimplapure has completed 72 credits; 48 credits remain for graduation (expected May 2028).',
           },
         ],
         suggestedActions: [
@@ -630,7 +873,7 @@ export const DEFAULT_ASSISTANT_CONVERSATIONS: AssistantConversation[] = [
       {
         id: 'grad-msg-2',
         sender: 'ai',
-        text: '## Answer\nAccording to your authorized degree audit:\n\n- You have completed **72 of 120 credits (60%)** toward your B.Sc. in Computer Science.\n- **Remaining Credits:** **48 credits** (20 Major Core, 10 GenEd, 18 Electives).\n- **Estimated Graduation:** **Spring 2028 (On Track)** with regular 15-credit term loads.\n\n### Upcoming Milestones\nComplete CS 310 and CS 340 in Spring 2027 to unlock senior capstone project eligibility.',
+        text: '## Answer\nAccording to your authorized degree audit:\n\n- You have completed **72 of 120 credits (60%)** toward your MCA (Division D).\n- **Remaining Credits:** **48 credits** (20 Major Core, 10 GenEd, 18 Electives).\n- **Estimated Graduation:** **Spring 2028 (On Track)** with regular 15-credit term loads.\n\n### Upcoming Milestones\nComplete CS 310 and CS 340 in Spring 2027 to unlock senior capstone project eligibility.',
         timestamp: '3:20 PM',
         channel: 'Web Chat',
         confidence: 'high',
@@ -658,8 +901,8 @@ export const DEFAULT_ASSISTANT_CONVERSATIONS: AssistantConversation[] = [
             department: 'Office of the Registrar',
             updatedAt: 'Updated September 20, 2026',
             version: 'DegreeAudit-v26',
-            section: 'Bachelor of Science in Computer Science Requirements',
-            excerpt: '120 minimum total credits required with 2.0+ GPA in major. Alex Morgan has 72 credits and a 3.82 GPA.',
+            section: 'Master of Computer Applications (MCA · Division D) Requirements',
+            excerpt: '120 minimum total credits required with 2.0+ GPA in major. Parth Pimplapure has 72 credits and a 3.82 GPA.',
           },
         ],
         suggestedActions: [
@@ -686,7 +929,7 @@ export const DEFAULT_ASSISTANT_CONVERSATIONS: AssistantConversation[] = [
       {
         id: 'it-msg-2',
         sender: 'ai',
-        text: '## Problem\nYour device is rejecting the campus connection due to this morning’s **Zanzee-Secure 802.1X RADIUS certificate renewal**.\n\n### Troubleshooting Steps\n1. Select **Forget Network** on \`Zanzee-Secure\` in your device settings.\n2. Reconnect using \`amorgan@zanzee.edu\`.\n3. Accept the new certificate for \`auth.zanzee.edu\`.\n\nFollow the interactive diagnostic card below.',
+        text: '## Problem\nYour device is rejecting the campus connection due to this morning’s **KJIT-Secure 802.1X RADIUS certificate renewal**.\n\n### Troubleshooting Steps\n1. Select **Forget Network** on \`KJIT-Secure\` in your device settings.\n2. Reconnect using \`ppimplapure@kjit.edu.in\`.\n3. Accept the new certificate for \`auth.kjit.edu.in\`.\n\nFollow the interactive diagnostic card below.',
         timestamp: '11:05 AM',
         channel: 'Web Chat',
         confidence: 'high',
@@ -698,9 +941,9 @@ export const DEFAULT_ASSISTANT_CONVERSATIONS: AssistantConversation[] = [
         cardData: {
           issue: 'RADIUS 802.1X Certificate Rotation',
           steps: [
-            'Forget "Zanzee-Secure" network on device',
-            'Reconnect using "amorgan@zanzee.edu" and student password',
-            'Accept new server certificate "auth.zanzee.edu"',
+            'Forget "KJIT-Secure" network on device',
+            'Reconnect using "ppimplapure@kjit.edu.in" and student password',
+            'Accept new server certificate "auth.kjit.edu.in"',
             'If using Okta Verify MFA, refresh one-time push token',
           ],
           networkHealth: { gateway: 'Operational', radius: 'Operational', vpn: 'Operational' },
@@ -713,7 +956,7 @@ export const DEFAULT_ASSISTANT_CONVERSATIONS: AssistantConversation[] = [
             updatedAt: 'Updated October 1, 2026',
             version: 'KB-4092',
             section: 'Section 3: 802.1X Certificate Renewal & MFA Reset',
-            excerpt: 'Following the October 2026 RADIUS update, clients must re-trust auth.zanzee.edu.',
+            excerpt: 'Following the October 2026 RADIUS update, clients must re-trust auth.kjit.edu.in.',
           },
         ],
         suggestedActions: [
@@ -785,27 +1028,27 @@ export const CAMPUS_SERVICES: CampusServiceItem[] = [
     category: 'Academic',
     description: 'Four-year degree planning, major declarations, prerequisite waivers, and faculty mentorship matching.',
     hours: 'Mon–Fri · 8:30 AM – 5:30 PM',
-    contact: 'advising@zanzee.edu · (555) 234-8810',
+    contact: 'advising@kjit.edu.in · (555) 234-8810',
     location: 'Founders Hall, Suite 204',
     aiPrompt: 'Can I register for CS 310 next semester and how many credits do I need to graduate?',
   },
   {
     id: 'srv-tutoring',
-    title: 'Zanzee Peer & AI Learning Commons',
+    title: 'Kristu Jayanti Peer & AI Learning Commons',
     category: 'Academic',
     description: '24/7 Socratic AI tutoring paired with drop-in undergraduate teaching fellows for STEM and humanities writing.',
     hours: 'Daily · 9:00 AM – 11:00 PM (AI 24/7)',
-    contact: 'commons@zanzee.edu · (555) 234-8822',
-    location: 'Grand Library, Mezzanine East',
+    contact: 'commons@kjit.edu.in · (555) 234-8822',
+    location: 'Central Library, Mezzanine East',
     aiPrompt: 'Help me understand recursion and binary search trees.',
   },
   {
     id: 'srv-it',
     title: 'Enterprise IT Help Desk & Foundry Lab',
     category: 'Technology',
-    description: 'Zanzee-Secure Wi-Fi configuration, Okta MFA hardware keys, campus VPN, and Azure/GPU research cluster access.',
+    description: 'KJIT-Secure Wi-Fi configuration, Okta MFA hardware keys, campus VPN, and Azure/GPU research cluster access.',
     hours: 'Mon–Sun · 7:00 AM – 10:00 PM',
-    contact: 'itdesk@zanzee.edu · Ext. 4357',
+    contact: 'itdesk@kjit.edu.in · Ext. 4357',
     location: 'Turing Hall, Lower Concourse',
     aiPrompt: 'I can’t access my university account or connect to campus Wi-Fi.',
   },
@@ -815,19 +1058,19 @@ export const CAMPUS_SERVICES: CampusServiceItem[] = [
     category: 'Financial',
     description: 'FAFSA & institutional grant advising, merit scholarship renewals, work-study placement, and tuition payment plans.',
     hours: 'Mon–Fri · 9:00 AM – 4:30 PM',
-    contact: 'finaid@zanzee.edu · (555) 234-8900',
+    contact: 'finaid@kjit.edu.in · (555) 234-8900',
     location: 'Bursar Hall, Room 101',
     aiPrompt: 'How do I apply for financial aid and submit my Proof of Enrollment?',
   },
   {
     id: 'srv-library',
-    title: 'Zanzee Archival Library & Special Collections',
+    title: 'Kristu Jayanti Archival Library & Special Collections',
     category: 'Library',
     description: 'Over 1.8 million volumes, IEEE/ACM digital databases, rare broadsheet archives, and private study carrels.',
     hours: 'Open 24 Hours (Reading Room 7 AM – Midnight)',
-    contact: 'library@zanzee.edu · (555) 234-8750',
+    contact: 'library@kjit.edu.in · (555) 234-8750',
     location: 'Central Quadrangle North',
-    aiPrompt: 'Find peer-reviewed papers on self-balancing binary search trees in the Zanzee Library.',
+    aiPrompt: 'Find peer-reviewed papers on self-balancing binary search trees in the Kristu Jayanti Library.',
   },
   {
     id: 'srv-career',
@@ -835,7 +1078,7 @@ export const CAMPUS_SERVICES: CampusServiceItem[] = [
     category: 'Career',
     description: 'Technical interview prep, alumni mentorship across software & biotech, and summer research stipends.',
     hours: 'Mon–Fri · 9:00 AM – 5:00 PM',
-    contact: 'careers@zanzee.edu · (555) 234-8940',
+    contact: 'careers@kjit.edu.in · (555) 234-8940',
     location: 'Chronicle House, 2nd Floor',
     aiPrompt: 'Review my Computer Science internship timeline for Summer 2027.',
   },
@@ -845,7 +1088,7 @@ export const CAMPUS_SERVICES: CampusServiceItem[] = [
     category: 'Health & Wellness',
     description: 'Confidential counseling, primary medical care, mindfulness workshops, and academic stress support.',
     hours: '24/7 On-Call Clinical Support',
-    contact: 'wellness@zanzee.edu · (555) 234-8111',
+    contact: 'wellness@kjit.edu.in · (555) 234-8111',
     location: 'West Meadow Pavilion',
     aiPrompt: 'What wellness and mindfulness resources are available during midterm exams?',
   },
@@ -855,7 +1098,7 @@ export const CAMPUS_SERVICES: CampusServiceItem[] = [
     category: 'Accessibility',
     description: 'Extended exam accommodations, real-time lecture captioning, screen-reader textbooks, and ergonomic labs.',
     hours: 'Mon–Fri · 8:30 AM – 5:00 PM',
-    contact: 'access@zanzee.edu · (555) 234-8899',
+    contact: 'access@kjit.edu.in · (555) 234-8899',
     location: 'Founders Hall, Suite 110',
     aiPrompt: 'How do I enable lecture live transcripts and extended exam accommodations?',
   },
@@ -864,12 +1107,12 @@ export const CAMPUS_SERVICES: CampusServiceItem[] = [
 export const LIBRARY_RESOURCES: LibraryResource[] = [
   {
     id: 'lib-1',
-    title: 'Introduction to Algorithms & Self-Balancing Trees (Zanzee Archival Edition)',
+    title: 'Introduction to Algorithms & Self-Balancing Trees (Kristu Jayanti Archival Edition)',
     authors: 'T. H. Cormen, C. E. Leiserson, R. L. Rivest, S. Johnson (Ed.)',
     year: 2025,
     type: 'Books',
     callNumber: 'QA76.6 .C662 2025',
-    citation: 'Cormen, T. H., et al. (2025). Introduction to Algorithms (Zanzee College Annotated 4th Ed.). Zanzee University Press.',
+    citation: 'Cormen, T. H., et al. (2025). Introduction to Algorithms (Kristu Jayanti Institute of Technology Annotated 4th Ed.). Kristu Jayanti University Press.',
     available: true,
     abstract: 'Comprehensive mathematical treatment of binary search trees, red-black trees, B-trees, and dynamic programming with CS 201 lab annotations.',
   },
@@ -886,23 +1129,23 @@ export const LIBRARY_RESOURCES: LibraryResource[] = [
   },
   {
     id: 'lib-3',
-    title: 'The Zanzee Journal of Symbolic Logic & Discrete Structures',
-    authors: 'Department of Mathematics, Zanzee College',
+    title: 'The Kristu Jayanti Journal of Symbolic Logic & Discrete Structures',
+    authors: 'Department of Mathematics, Kristu Jayanti Institute of Technology',
     year: 2026,
     type: 'Journals',
     callNumber: 'PER QA1 .Z36 V.42',
-    citation: 'Chen, D. (Ed.). (2026). Chromatic Polynomials on Planar Graphs. Zanzee Journal of Symbolic Logic, 42(3), 14–49.',
+    citation: 'Chen, D. (Ed.). (2026). Chromatic Polynomials on Planar Graphs. Kristu Jayanti Journal of Symbolic Logic, 42(3), 14–49.',
     available: true,
     abstract: 'Quarterly peer-reviewed monograph series covering combinatorial proof techniques, graph coloring bounds, and algorithmic complexity.',
   },
   {
     id: 'lib-4',
     title: 'ACM Digital Library & IEEE Xplore Full-Text Consortium Index',
-    authors: 'Association for Computing Machinery / Zanzee Library',
+    authors: 'Association for Computing Machinery / Kristu Jayanti Library',
     year: 2026,
     type: 'Databases',
-    callNumber: 'DB-ACM-IEEE-ZANZEE',
-    citation: 'Zanzee College Digital Repository (2026). Full-Text Institutional Subscription via Shibboleth SSO.',
+    callNumber: 'DB-ACM-IEEE-KJIT',
+    citation: 'Kristu Jayanti Institute of Technology Digital Repository (2026). Full-Text Institutional Subscription via Shibboleth SSO.',
     available: true,
     abstract: 'Direct institutional access to 3.4 million full-text computing proceedings, transactions, and archival technical standards.',
   },
@@ -948,7 +1191,7 @@ export const NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'notif-5',
     category: 'System',
-    title: 'Zanzee-Secure Wi-Fi RADIUS Certificate Updated',
+    title: 'KJIT-Secure Wi-Fi RADIUS Certificate Updated',
     detail: 'Campus IT rotated the 802.1X certificate; see IT Support if your laptop prompts for trust.',
     timestamp: '2 days ago',
     unread: false,
@@ -970,7 +1213,7 @@ export const MESSAGE_THREADS: MessageThread[] = [
         id: 'm-1',
         sender: 'Dr. Miriam Hawthorne',
         time: 'Yesterday · 4:10 PM',
-        body: 'Hello Alex, I reviewed your Fall mid-semester audit. With 72 credits complete and a 3.82 GPA, you are right on track for honours standing.',
+        body: 'Hello Parth, I reviewed your Fall mid-semester audit. With 72 credits complete and a 3.82 GPA, you are right on track for honours standing. (MCA · Division D · 26MCAD30)',
       },
       {
         id: 'm-2',
@@ -991,7 +1234,7 @@ export const MESSAGE_THREADS: MessageThread[] = [
     messages: [
       {
         id: 'm-3',
-        sender: 'Alex Morgan',
+        sender: 'Parth Pimplapure',
         time: 'Yesterday · 1:45 PM',
         body: 'Professor Johnson, for Lab 4 deleteNode(), should we replace a two-child node with its in-order successor or in-order predecessor?',
       },
@@ -999,13 +1242,13 @@ export const MESSAGE_THREADS: MessageThread[] = [
         id: 'm-4',
         sender: 'Professor Sarah Johnson',
         time: 'Yesterday · 2:12 PM',
-        body: 'Great question, Alex! Please use the in-order successor (the minimum key in the right subtree) so your tree structure matches our deterministic unit tests.',
+        body: 'Great question, Parth! Please use the in-order successor (the minimum key in the right subtree) so your tree structure matches our deterministic unit tests.',
       },
     ],
   },
   {
     id: 'thr-finaid',
-    correspondent: 'Zanzee Financial Aid Office',
+    correspondent: 'Kristu Jayanti Financial Aid Office',
     role: 'Financial Aid Officer',
     department: 'Bursar & Scholarships',
     unread: true,
@@ -1014,15 +1257,15 @@ export const MESSAGE_THREADS: MessageThread[] = [
     messages: [
       {
         id: 'm-5',
-        sender: 'Zanzee Financial Aid Office',
+        sender: 'Kristu Jayanti Financial Aid Office',
         time: 'Oct 3 · 11:00 AM',
-        body: 'Your $14,500 Zanzee Presidential Merit Scholarship is approved for 2026–27. Please upload your signed Proof of Enrollment form by October 15.',
+        body: 'Your ₹1,20,000 Kristu Jayanti Merit Scholarship is approved for 2026–27. Please upload your signed Proof of Enrollment form by October 15.',
       },
     ],
   },
   {
     id: 'thr-it',
-    correspondent: 'Zanzee IT Help Desk',
+    correspondent: 'Kristu Jayanti IT Help Desk',
     role: 'Systems Engineer',
     department: 'Enterprise Technology',
     unread: false,
@@ -1031,9 +1274,9 @@ export const MESSAGE_THREADS: MessageThread[] = [
     messages: [
       {
         id: 'm-6',
-        sender: 'Zanzee IT Help Desk',
+        sender: 'Kristu Jayanti IT Help Desk',
         time: 'Sep 29 · 9:20 AM',
-        body: 'Your Azure Foundry GPU student sandbox allocation for CS 201 has been provisioned under your Zanzee SSO account.',
+        body: 'Your AI GPU student sandbox allocation for CS 201 has been provisioned under your KJIT SSO account.',
       },
     ],
   },
@@ -1178,7 +1421,7 @@ export const COURSE_CATALOG: CourseCatalogItem[] = [
     prerequisites: ['BIO 101'],
     tags: ['General Education', 'Natural Sciences', 'Simulation', 'Algorithms & Optimization'],
     description:
-      'Ecosystem dynamics, climate telemetry sensor networks, population modeling, and spatial GIS analytics fulfilling Zanzee College natural science requirements.',
+      'Ecosystem dynamics, climate telemetry sensor networks, population modeling, and spatial GIS analytics fulfilling Kristu Jayanti Institute of Technology natural science requirements.',
     professor: 'Prof. Alistair Finch',
     schedule: 'Mon & Wed · 11:30 AM – 1:00 PM',
     room: 'Darwin Science Center 115',
@@ -1337,3 +1580,139 @@ export function getPersonalizedRecommendations(
     return true;
   });
 }
+
+export const KJIT_ADMISSION_DATA = {
+  institution: 'Kristu Jayanti Institute of Technology',
+  university: 'Kristu Jayanti (Deemed to be University)',
+  location: 'K. Narayanapura, Kothanur P.O., Bengaluru - 560077, Karnataka, India',
+  founder: 'Bodhi Niketan Trust, Carmelites of Mary Immaculate (CMI)',
+  headOfDepartment: {
+    name: 'Dr. Muruganantham A',
+    title: 'Head, Institute of Technology',
+    department: 'Postgraduate Department of Computer Science',
+  },
+  contact: {
+    phone: '080-68737777',
+    fax: '080-68737799',
+    email: 'info@kristujayanti.com',
+    admissionEmail: 'admission@kristujayanti.com',
+    url: 'https://www.kristujayanti.edu.in/academics/institute-of-technology/admission.php',
+  },
+  antiCapitationPolicy:
+    'The Management / University does not collect any type of Capitation fees / Donation other than the official fees prescribed.',
+  paymentModes: [
+    'Demand Draft in favour of "Kristu Jayanti (Deemed to be University)", payable at Bengaluru',
+    'Online Mode (Net banking & debit / credit card via admission portal)',
+  ],
+  categoryOtherFees: [
+    { category: 'Students from Kristu Jayanti (Deemed to be University)', amount: 'NIL' },
+    { category: 'Students from Public Universities in Karnataka', amount: 'NIL' },
+    { category: 'Students from Institutions other than Public Universities in Karnataka', amount: '₹10,000' },
+    { category: 'Students from states other than Karnataka', amount: '₹20,000' },
+    { category: 'Students qualified from International Board in India', amount: '₹20,000' },
+    { category: 'NRI students', amount: '₹40,000' },
+    { category: 'Students from SAARC Countries', amount: '₹50,000' },
+    { category: 'Foreign Students (Foreign Nationals / PIO / OCI)', amount: '₹1,00,000' },
+  ],
+  programmes: [
+    {
+      id: 'mca',
+      code: 'MCA',
+      title: 'Master of Computer Applications',
+      duration: '2 Years (Full-Time)',
+      academicFeeYear1: '₹1,90,000',
+      academicFeeYear2: '₹1,90,000',
+      registrationFee: '₹5,000 (Non-Refundable)',
+      applicationProcessingFee: '₹1,500 (Non-Refundable)',
+      eligibility:
+        'Candidates with a Bachelor’s degree in Arts, Science, Commerce and Engineering with not less than 50% marks (45% for SC/ST candidates) as aggregate from a recognized University are eligible to apply. Candidates should have studied Mathematics either at the Higher Secondary (10+2) or Undergraduate level.',
+      bridgeCourseNote:
+        'Candidates who do not have a background in Mathematics will be required to undergo a mandatory Bridge Course in Mathematics conducted by the Department.',
+      highlights: [
+        'Advanced Software Engineering, Cloud Architecture & DevOps',
+        'State-of-the-Art Labs & High-Performance Computing',
+        'In-house Software Development and Research Cell',
+        'Industry Mentorship Programme and Global Placements',
+      ],
+      status: 'Admissions Open 2026–27',
+    },
+    {
+      id: 'msc-ds',
+      code: 'M.Sc. DS',
+      title: 'Master of Science in Data Science',
+      duration: '2 Years (Full-Time)',
+      academicFeeYear1: '₹1,40,000',
+      academicFeeYear2: '₹1,40,000',
+      registrationFee: '₹5,000 (Non-Refundable)',
+      applicationProcessingFee: '₹1,200 (Non-Refundable)',
+      eligibility:
+        'Candidates with B.Sc. Data Science / B.Sc. Data Analytics / B.Sc. Computer Science / BCA / B.E. / B.Tech. or B.Sc. Mathematics / Statistics / Physics / Electronics with not less than 50% (45% for SC/ST candidates) marks as aggregate are eligible to apply.',
+      bridgeCourseNote:
+        'Candidates who do not have a background in Computer Science will be required to undergo a mandatory Bridge Course in Computer Science conducted by the Institute.',
+      highlights: [
+        'Machine Learning, Deep Learning, Big Data Analytics & NLP',
+        'Specialised AI & GPU Computing Labs',
+        'Data Science Society & IEEE Student Chapter collaboration',
+        'Funded research initiatives & real-time analytics projects',
+      ],
+      status: 'Admissions Open 2026–27',
+    },
+    {
+      id: 'msc-cs',
+      code: 'M.Sc. CS',
+      title: 'Master of Science in Cyber Security',
+      duration: '2 Years (Full-Time)',
+      academicFeeYear1: '₹1,50,000',
+      academicFeeYear2: '₹1,50,000',
+      registrationFee: '₹5,000 (Non-Refundable)',
+      applicationProcessingFee: '₹1,200 (Non-Refundable)',
+      eligibility:
+        'Candidates who have passed a Bachelor’s degree in Computer Science or Computer Applications or Information Technology or an equivalent degree in a related discipline from a recognized university with a minimum of 50% aggregate marks (45% for SC/ST candidates) are eligible to apply. Candidates who have completed B.E. or B.Tech in any relevant discipline with a strong background in Mathematics and Computer Science are also eligible.',
+      bridgeCourseNote:
+        'Foundation bridge modules in network protocols and security mathematics provided for interdisciplinary entrants.',
+      highlights: [
+        'Penetration Testing, Cryptography, Cloud Security & Forensics',
+        'Dedicated Cyber Security Lab & Threat Simulation Range',
+        'Hands-on vulnerability assessments & industry internships',
+        'Partnerships with top tier IT security organizations',
+      ],
+      status: 'Admissions Open 2026–27',
+    },
+  ],
+  whyInstituteOfTechnology: [
+    'Dynamic curriculum with foundation, discipline, and application course titles',
+    'Student-Centric Pedagogy fostering critical thinking and innovation',
+    'Myriad skill enrichment programs & professional certifications',
+    'Expert academicians to cater to students’ diverse interests',
+    'Career counseling, training, and 100% placement assistance',
+    'Effective Continuous Internal Evaluation methods',
+    'In-house R&D wing and Software Development Cell',
+    'Social Outreach programs for holistic learning',
+    'Participatory learning through fests, exhibitions, and hackathons',
+    'Industry-institution based value-added programs',
+    '24/7 library with extensive print titles, IEEE Xplore, and ACM digital repository',
+  ],
+  studentTestimonials: [
+    {
+      name: 'Stella Mary S',
+      regNo: '24MCAA61',
+      programme: 'MCA',
+      quote:
+        'The Institute of Technology has played a significant role in shaping my academic and professional development through a well-structured curriculum. Regular workshops, seminars, and serving as Secretary helped me develop strong leadership and research skills.',
+    },
+    {
+      name: 'Karthick S',
+      regNo: '24MCAA36',
+      programme: 'MCA',
+      quote:
+        'The department actively promotes experiential learning with exposure to prestigious institutions like ISRO. Presenting research papers and serving as Event Head for the departmental fest gave me immense confidence and industry readiness.',
+    },
+    {
+      name: 'Deeksha S',
+      regNo: '24MCAA12',
+      programme: 'MCA',
+      quote:
+        'Pursuing my MCA at Kristu Jayanti has been a truly enriching journey. With continuous faculty mentorship, I successfully presented research papers and secured placement in a reputed tech company.',
+    },
+  ],
+};

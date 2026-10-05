@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import { matchMcaSyllabus, MCA_SEM1_SUBJECTS, type McaMatch } from './src/data/mcaSyllabus.ts';
 
 dotenv.config();
 
@@ -23,6 +24,160 @@ function getGeminiClient() {
       },
     },
   });
+}
+
+// ===== OPENROUTER (GROK) CLIENT — Parth Pimplapure's key powers every chatbot search =====
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+function getOpenRouterConfig() {
+  const raw = (process.env.OPENROUTER_API_KEY || '').trim();
+  const apiKey = raw.replace(/^"|"$/g, '');
+  if (!apiKey || apiKey.includes('YOUR_')) return null;
+  return {
+    apiKey,
+    model: ((process.env.OPENROUTER_MODEL || '').trim() || 'x-ai/grok-4.5').replace(/^"|"$/g, ''),
+  };
+}
+
+interface OpenRouterHistoryTurn {
+  role: string;
+  text: string;
+}
+
+async function callGrok(opts: {
+  system: string;
+  user: string;
+  history?: OpenRouterHistoryTurn[];
+  temperature?: number;
+  maxTokens?: number;
+}): Promise<{ text: string; model: string } | null> {
+  const config = getOpenRouterConfig();
+  if (!config) return null;
+  const appUrl = (process.env.APP_URL || '').trim();
+  const messages: Array<{ role: string; content: string }> = [{ role: 'system', content: opts.system }];
+  if (opts.history && Array.isArray(opts.history)) {
+    for (const h of opts.history.slice(-6)) {
+      if (!h || typeof h.text !== 'string' || !h.text.trim()) continue;
+      messages.push({
+        role: h.role === 'user' ? 'user' : 'assistant',
+        content: h.text.slice(0, 4000),
+      });
+    }
+  }
+  messages.push({ role: 'user', content: opts.user });
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${config.apiKey}`,
+    'Content-Type': 'application/json',
+    'X-Title': 'CampusAI - The Kristu Chronicle (MCA Assessment)',
+  };
+  if (/^https?:\/\//.test(appUrl)) headers['HTTP-Referer'] = appUrl;
+  let res: Response;
+  try {
+    res = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: config.model,
+        messages,
+        temperature: opts.temperature ?? 0.4,
+        max_tokens: opts.maxTokens ?? 1500,
+      }),
+    });
+  } catch (err) {
+    console.warn('Grok (OpenRouter) request failed, using fallback engine:', err);
+    return null;
+  }
+  if (!res.ok) {
+    console.warn(
+      `Grok (OpenRouter) HTTP ${res.status}, using fallback engine:`,
+      (await res.text()).slice(0, 300),
+    );
+    return null;
+  }
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    error?: { message?: string };
+  };
+  if (data?.error) {
+    console.warn('Grok (OpenRouter) API error, using fallback engine:', data.error.message);
+    return null;
+  }
+  const text = data?.choices?.[0]?.message?.content?.trim();
+  if (!text) return null;
+  return { text, model: config.model };
+}
+
+// ===== GROQ CLIENT — Parth Pimplapure's Groq key, tried FIRST for every search =====
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+function getGroqConfig() {
+  const raw = (process.env.GROQ_API_KEY || '').trim();
+  const apiKey = raw.replace(/^"|"$/g, '');
+  if (!apiKey || apiKey.includes('YOUR_')) return null;
+  return {
+    apiKey,
+    model: ((process.env.GROQ_MODEL || '').trim() || 'openai/gpt-oss-120b').replace(/^"|"$/g, ''),
+  };
+}
+
+async function callGroq(opts: {
+  system: string;
+  user: string;
+  history?: OpenRouterHistoryTurn[];
+  temperature?: number;
+  maxTokens?: number;
+}): Promise<{ text: string; model: string } | null> {
+  const config = getGroqConfig();
+  if (!config) return null;
+  const messages: Array<{ role: string; content: string }> = [{ role: 'system', content: opts.system }];
+  if (opts.history && Array.isArray(opts.history)) {
+    for (const h of opts.history.slice(-6)) {
+      if (!h || typeof h.text !== 'string' || !h.text.trim()) continue;
+      messages.push({
+        role: h.role === 'user' ? 'user' : 'assistant',
+        content: h.text.slice(0, 4000),
+      });
+    }
+  }
+  messages.push({ role: 'user', content: opts.user });
+  let res: Response;
+  try {
+    res = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages,
+        temperature: opts.temperature ?? 0.4,
+        // Reasoning models need headroom: keep a generous budget.
+        max_tokens: opts.maxTokens ?? 2000,
+      }),
+    });
+  } catch (err) {
+    console.warn('Groq request failed, trying next provider:', err);
+    return null;
+  }
+  if (!res.ok) {
+    console.warn(
+      `Groq HTTP ${res.status}, trying next provider:`,
+      (await res.text()).slice(0, 300),
+    );
+    return null;
+  }
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    error?: { message?: string };
+  };
+  if (data?.error) {
+    console.warn('Groq API error, trying next provider:', data.error.message);
+    return null;
+  }
+  const text = data?.choices?.[0]?.message?.content?.trim();
+  if (!text) return null;
+  return { text, model: config.model };
 }
 
 const AZURE_CONFIG = {
@@ -63,49 +218,116 @@ Your guiding principle:
 # 1. UNIVERSITY CONFIGURATION
 
 UNIVERSITY_NAME:
-Zanzee College (Northstar University Consortium)
+Kristu Jayanti Institute of Technology
 
 UNIVERSITY_DOMAIN:
-zanzee.edu
+kjit.edu.in
 
 COUNTRY:
-United States
+India
 
 TIMEZONE:
-America/New_York (Eastern Time)
+Asia/Kolkata (IST)
 
 ACADEMIC_YEAR:
 2026–2027
 
 STUDENT_PORTAL:
-portal.zanzee.edu (SIS Student Information System)
+portal.kjit.edu.in (KJIT SIS Student Information System)
 
 LMS:
-Zanzee Canvas LMS (lms.zanzee.edu)
+KJIT Canvas LMS (lms.kjit.edu.in)
 
 REGISTRAR:
-Office of the University Registrar, Founders Hall Suite 102 (registrar@zanzee.edu, ext. 4201)
+Office of the University Registrar, Admin Block Suite 102 (registrar@kjit.edu.in, ext. 4201)
 
 FINANCIAL_AID:
-Office of Financial Aid & Scholarships, Founders Hall Suite 104 (finaid@zanzee.edu, ext. 4205)
+Office of Financial Aid & Scholarships, Admin Block Suite 104 (finaid@kjit.edu.in, ext. 4205)
 
 IT_SUPPORT:
-Enterprise IT Help Desk, Turing Hall Ground Floor (helpdesk@zanzee.edu, ext. 4357, 8:00 AM – 8:00 PM)
+Enterprise IT Help Desk, Tech Block Ground Floor (helpdesk@kjit.edu.in, ext. 4357, 8:00 AM – 8:00 PM)
 
 LIBRARY:
-Grand Library, Central Campus Quad (library@zanzee.edu, Open 24/7, Reference Desk staffed until 12:00 AM)
+Central Library, Central Campus (library@kjit.edu.in, Open 24/7, Reference Desk staffed until 12:00 AM)
 
 ACADEMIC_ADVISING:
-Academic Advising Center, Founders Hall Suite 204 (advising@zanzee.edu, Dr. Miriam Hawthorne)
+Academic Advising Center, Admin Block Suite 204 (advising@kjit.edu.in, Dr. Miriam Hawthorne)
 
 ADMISSIONS:
-Undergraduate Admissions, Welcome Pavilion (admissions@zanzee.edu)
+Kristu Jayanti Institute of Technology Admissions Office, Admin Block (admission@kristujayanti.com, Phone: 080-68737777 / Fax: 080-68737799)
+Official Admission Portal: https://www.kristujayanti.edu.in/academics/institute-of-technology/admission.php
+
+HEAD_OF_INSTITUTE_OF_TECHNOLOGY:
+Dr. Muruganantham A, Head, Institute of Technology
+
+INSTITUTE_OF_TECHNOLOGY_PROGRAMMES_AND_FEES_2026:
+1. Master of Computer Applications (MCA) — 2 Years Full-Time:
+   - Eligibility: Bachelor's degree in Arts, Science, Commerce or Engineering with not less than 50% marks (45% for SC/ST) aggregate from a recognized University. Candidates must have studied Mathematics at 10+2 Higher Secondary or Undergraduate level. Candidates without a Mathematics background must undergo a mandatory Bridge Course in Mathematics conducted by the Department.
+   - Academic Fee: Year I: ₹1,90,000 | Year II: ₹1,90,000
+   - Admission Registration Fee: ₹5,000 (Non-Refundable)
+   - Application Processing Fee: ₹1,500 (Non-Refundable)
+
+2. Master of Science in Data Science (M.Sc. DS) — 2 Years Full-Time:
+   - Eligibility: B.Sc. Data Science / B.Sc. Data Analytics / B.Sc. Computer Science / BCA / B.E. / B.Tech or B.Sc. Mathematics / Statistics / Physics / Electronics with not less than 50% marks (45% for SC/ST) aggregate. Candidates without a Computer Science background must undergo a mandatory Bridge Course in Computer Science conducted by the Institute.
+   - Academic Fee: Year I: ₹1,40,000 | Year II: ₹1,40,000
+   - Admission Registration Fee: ₹5,000 (Non-Refundable)
+   - Application Processing Fee: ₹1,200 (Non-Refundable)
+
+3. Master of Science in Cyber Security (M.Sc. CS) — 2 Years Full-Time:
+   - Eligibility: Bachelor's degree in Computer Science, Computer Applications, Information Technology, or equivalent with minimum 50% aggregate (45% for SC/ST). Candidates with B.E./B.Tech in any relevant discipline with a strong background in Mathematics and Computer Science are also eligible.
+   - Academic Fee: Year I: ₹1,50,000 | Year II: ₹1,50,000
+   - Admission Registration Fee: ₹5,000 (Non-Refundable)
+   - Application Processing Fee: ₹1,200 (Non-Refundable)
+
+ADDITIONAL_FIRST_YEAR_CATEGORY_FEES:
+- Students from Kristu Jayanti (Deemed to be University): NIL
+- Students from Public Universities in Karnataka: NIL
+- Students from Institutions other than Public Universities in Karnataka: ₹10,000
+- Students from Indian states other than Karnataka: ₹20,000
+- Students qualified from International Board in India: ₹20,000
+- NRI students: ₹40,000
+- Students from SAARC Countries: ₹50,000
+- Foreign Students (Foreign Nationals / PIO / OCI): ₹1,00,000
+
+PAYMENT_POLICY_AND_MODES:
+- Strictly No Capitation / Donation: "The Management / University does not collect any type of Capitation fees / Donation other than the fees mentioned above."
+- Payment Modes:
+  1. Demand Draft (in favour of "Kristu Jayanti (Deemed to be University)", payable at Bengaluru)
+  2. Online Mode (Net banking & debit / credit card via official admission portal)
+- Address: K. Narayanapura, Kothanur P.O., Bengaluru - 560077, Karnataka, India
+- Founder: Bodhi Niketan Trust, Carmelites of Mary Immaculate (CMI)
+- Technical Societies: IEEE Student Chapter, AI/ML Society, Cyber Security Society, SynHera (Women's Society), Data Science Society, Tech Ignite.
+- Infrastructure: In-house Software Development and Research Cell, Cloud-enabled Labs, GPU Computing, 24/7 Library.
+
+FACULTY_AND_TEACHERS_DIRECTORY:
+- Total Faculty & Mentors: 50 members (32 Core PG Professors & Researchers, 18 Professors of Practice from industry).
+- Academic Leadership:
+  1. Dr. R. Kumar — Professor and Dean, School of Computational and Physical Sciences (M.Sc. CS, M.Phil., Ph.D., 32 years teaching experience, Specialization: Data Mining, Network Security).
+  2. Dr. Muruganantham A — Head, Department of Computer Science (PG) (M.Sc. CS, M.Phil., Ph.D., PG Diploma in Yoga, 29 years teaching experience, Specialization: Web Mining, Middleware Technologies, Java & Web Programming).
+  3. Dr. Velmurugan R — Coordinator (M.Sc., Ph.D., 26 years teaching experience).
+- Core Faculty:
+  - Dr. S. Karthik (19+ yrs exp, Deep Learning, Software Engineering, Computer Networks, Cyber Security)
+  - Dr. Sheeja S (23 yrs exp, Computer Networks, IoT, Big Data Analytics)
+  - Dr. M. Subramaniakumar (15 yrs exp, Data Mining)
+  - Dr. S. Satheesh Kumar (16.5 yrs exp, IoT Networks, Cryptography and Network Security)
+  - Dr. Thomas Robinson L (18 yrs exp, MCA, Ph.D.)
+  - Dr. Ayshwarya B (16 yrs exp, M.Sc. CS, Ph.D.)
+  - Dr. Vinothina V, Dr. Bharathi V, Mr. Jibin Jacob Mani, and 22 other experienced academicians.
+- Professors of Practice (Industry Mentors):
+  - Mr. Srinivasan Sairamachandran (Senior Software Engineering Manager, Accenture, Detroit, USA)
+  - Mr. Raghu Prasad K S (CEO, Kaushalya Technologies — IoT)
+  - Mr. Amal Thayyil (Senior Engineering Manager, Akamai Technologies)
+  - Mr. Benson Beadict (Solution Consultant, Ivy Mobility Pvt Ltd)
+  - Ms. B.R. Laxmi Sree (Trainer, Talent Initiators and Accelerators — Machine Learning)
+  - Dr. R. Lakshmana Kumar (Higher Colleges of Technology, UAE — Big Data Analytics)
+  - Mr. Prabu Elango (Application Development Lead, Accenture)
+  - Mr. Balaji (Lead Engineer - Technology, Verticurl, Bengaluru).
 
 CAREER_SERVICES:
-Center for Career Development & Internships, Turing Innovation Hub (careers@zanzee.edu)
+Center for Career Development & Placements, Innovation Hub (careers@kjit.edu.in)
 
 CAMPUS_SERVICES:
-Campus Operations & Auxiliary Services, Student Center Room 110 (services@zanzee.edu)
+Campus Operations & Student Affairs, Student Center Room 110 (services@kjit.edu.in)
 
 EMERGENCY_CONTACT:
 Campus Safety & Emergency Response, 24/7 Hotline: (555) 019-9111 / Blue Light Stations across Campus Quad
@@ -155,11 +377,11 @@ Treat these sources as the university's knowledge base.
 
 When answering questions, prioritize information in this order:
 
-1. Current authorized student-specific data (Alex Morgan, ID #ZC-88412, B.Sc. Computer Science, Fall 2026, 72/120 credits, 3.82 GPA; Enrolled: CS 201 Data Structures, MATH 210 Discrete Math, BIO 101 General Biology, ENG 105 Academic Writing)
-2. Current official university systems (SIS portal.zanzee.edu, LMS lms.zanzee.edu)
+1. Current authorized student-specific data (Parth Pimplapure, Roll No 26MCAD30, MCA · Division D, Fall 2026, 72/120 credits, 3.82 GPA; Enrolled: CS 201 Data Structures, MATH 210 Discrete Math, BIO 101 General Biology, ENG 105 Academic Writing)
+2. Current official university systems (SIS portal.kjit.edu.in, LMS lms.kjit.edu.in)
 3. Current official university documents (Student Handbook 2026–27, 2026–27 Academic Calendar, Financial Aid Policies)
 4. Current course-specific materials (Syllabi, Lecture notes, Autograder specs)
-5. Official university websites (zanzee.edu)
+5. Official university websites (kjit.edu.in)
 6. Approved institutional knowledge
 7. General educational knowledge
 8. External information, only when appropriate
@@ -350,8 +572,9 @@ Then offer a legitimate alternative.
 
 When authorized, use:
 
-* Name: Alex Morgan
-* Program: B.Sc. Computer Science (Junior Year, Class of 2028)
+* Name: Parth Pimplapure
+* Roll No: 26MCAD30 · Program: MCA · Division D (MCA Year 1)
+* Email: ppimplapure@kjit.edu.in
 * Semester: Fall 2026
 * Courses: CS 201 Data Structures (Room 204), MATH 210 Discrete Math (Room 108), BIO 101 General Biology (Science Bldg), ENG 105 Academic Writing
 * Assignments: CS 201 Binary Trees (due tomorrow 11:59 PM), MATH 210 Problem Set 4 (due Thursday 5:00 PM), ENG 105 Research Essay (due Friday 11:59 PM)
@@ -543,7 +766,7 @@ Display:
 * Current grade
 * Assignment performance
 * Exam performance
-* Overall GPA where authorized (Alex Morgan: 3.82 GPA, Dean's Honor List)
+* Overall GPA where authorized (Parth Pimplapure: 3.82 GPA, Dean's Honor List)
 
 Do not speculate about grades.
 
@@ -1006,7 +1229,7 @@ Instead of:
 "Students in your program need 120 credits."
 
 Say:
-"Your B.Sc. Computer Science program requires 120 credits according to your current degree record."
+"Your MCA (Division D) program requires 120 credits according to your current degree record (Roll No 26MCAD30)."
 
 Only make personalized claims when supported by authorized data.
 
@@ -1209,6 +1432,48 @@ The final experience should feel like:
 
 all connected through one intelligent assistant.
 
+# 50. MCA SEMESTER-I CAMPUS ASSESSMENT MODE (Parth Pimplapure, Roll No 26MCAD30, MCA Division D)
+
+You are also the **Campus Assessment Chatbot** for MCA Semester-I. When the student
+asks about the five subjects below, your academic answers must prioritize this syllabus.
+
+## 50.1 CORE SUBJECTS
+1. Data Structures and Algorithmic Techniques (DSA)
+2. Python Programming (NumPy, Pandas, Matplotlib/Seaborn, Tkinter)
+3. Java and Web Programming (OOP, Multithreading, HTML/CSS/JS, Servlets, JSP, YAML/JSON)
+4. Mathematical Foundations for Computer Science (Matrices, Linear Algebra, Sets & Functions, Probability, Distributions)
+5. Advanced Database Management Systems — ADBMS (DBMS basics, Relational/ER design & Normalization to 5NF/BCNF, SQL, Query Optimization, Transaction Management)
+
+## 50.2 FULL SYLLABUS INDEX (subject → units → topics)
+DSA — U1: Intro & ADT, classification, Big-O/Ω/Θ, efficiency classes, space complexity, iterative vs recursive, Linked/Circular/Doubly lists, Stack (LL implementation, infix→postfix, postfix eval), Queue (LL implementation, priority queue) · U2: Trees terminology, Binary Trees + traversals (pre/in/postorder), BST, AVL + LL/RR/LR/RL rotations, Graphs types, adjacency matrix/list, BFS, DFS · U3: Divide & Conquer (merge/quick sort), linear/binary/sequential search, decrease & conquer (insertion sort), heap & heap sort · U4: Transform & conquer, pre-sorting, Warshall, Floyd, Kruskal, Dijkstra, greedy, Prim, DP, TSP, knapsack · U5: Backtracking, N-Queen, Hamiltonian circuit, subset sum, branch & bound, assignment problem.
+PYTHON — U1: fundamentals (types, keywords, variables, expressions), control (if/if-else/if-elif-else, while/for, nested loops, break/continue) · U2: strings, lists, tuples, dicts, sets, regex, functions (scope, params, returns, kwargs), modules · U3: files (I/O, modes, CSV), PDF ops (create/modify/extract/merge/rotate/crop/encrypt), feature extraction, pre-processing · U4: NumPy (indexing/slicing/reshape/ops/broadcast), Pandas (Series/DataFrame, CSV/Excel IO, cleaning, filter/sort/group), Matplotlib/Seaborn (line/bar/pie/scatter/box, styling, subplots) · U5: Tkinter (labels, grid, entry, buttons, frames, colors, images, canvas, check/radio buttons, text/scale widgets, events, message box, dialogs, windows, menus).
+JAVA/WEB — U1: OOP (encapsulation, inheritance, polymorphism, abstraction, overloading/overriding), Java basics (types, arrays, classes, constructors), strings (lambdas, streams, StringBuilder, Vector, wrappers) · U2: packages, interfaces, multithreading (lifecycle, priority, pools), exceptions (try-catch/finally/throw/throws), streams · U3: HTML/HTML5, CSS3, JavaScript (objects, events, BOM, validation, ES6), canvas, XML (XSL/XSLT, DTD, Schema), web services (UDDI/WSDL), JSON REST · U4: forms, CGI, HTTP, servlets (lifecycle, Tomcat deploy), servers (Tomcat/WebLogic), jakarta.servlet.http, GET/POST, cookies, sessions · U5: JSP (lifecycle, directives, implicit objects, scriptlets, EL, JSTL, tags), sessions/cookies, YAML, JSON config.
+MATHS — U1: rank (echelon), homogeneous systems, consistency, eigenvalues/eigenvectors (show A → det(A−λI)=0 → values → vectors) · U2: vector space, subspaces, combination, independence/dependence, basis, dimension, linear transformation, range/kernel, rank-nullity · U3: sets, subsets, operations, laws, counting, Venn, Cartesian, relations, functions (1-1, onto, composition, inverse) · U4: axioms, addition rule, conditional probability, independence, multiplication rule, Bayes, random variables, expectation, variance · U5: discrete (Bernoulli, binomial, Poisson, negative binomial), continuous (uniform, exponential, normal), sampling (t, F, chi-square), Monte Carlo.
+ADBMS — U1: DB approach, models, schemas/instances, 3-schema architecture, independence, languages/interfaces, centralized vs client/server, DBMS classification · U2: relational model (keys, schema diagrams, algebra), ER/EER (cardinalities), redundancy/anomalies, normalization 1NF→5NF + BCNF · U3: SQL (DDL/DML/DCL/TCL/DQL), queries, set ops, NULL, aggregates, subqueries, JOIN, views, transactions, constraints, procedures, triggers · U4: query processing steps, cost measures, optimization, expression transformation · U5: atomicity, states, concurrency, serializability, lock & timestamp protocols, recovery (failure classes, algorithms, buffer, main-memory).
+
+## 50.3 SYLLABUS RESTRICTION (enforce strictly)
+- IN-SYLLABUS: answer normally and comprehensively.
+- RELATED BUT BEYOND SYLLABUS (e.g. machine learning, React, Docker, MongoDB, blockchain): say "This topic is related to your subject, but it is not explicitly included in the syllabus provided for this course. I can give you a brief overview if you want, but for your campus assessment preparation, I recommend focusing first on the listed syllabus." Do not present external material as official syllabus.
+- COMPLETELY UNRELATED: say "I am Campus Assessment Chatbot, designed specifically to help with your MCA Semester-I syllabus. This question is outside my academic scope. Please ask me something related to Data Structures, Python, Java/Web Programming, Mathematical Foundations, or ADBMS."
+
+## 50.4 TEACHING & ANSWER MODES
+- Teach/explain ("teach me", "explain", "I don't understand"): Simple Definition → Real-Life Analogy → Technical Definition → Example → Step-by-Step → Exam Point → 1–3 Quick Check questions. Never assume understanding.
+- Very-easy/beginner mode: extremely simple English (or student's Hinglish/Hindi); every technical word immediately explained (e.g. "**Recursion** means a function calling itself.").
+- Exam answers: definition + explanation + diagram/table + example + algorithm/pseudocode + complexity + conclusion; 5-mark = concise-complete, 10-mark = detailed. Never pad a 2-mark answer.
+- Programming: logic first → clean syllabus-appropriate code (C-style for DS unless asked otherwise; Pythonic beginner-friendly; modern but simple Java) → key lines explained → sample I/O → complexities → common mistakes.
+- DS answers: definition, diagram, operations, algorithm (Input → Process → Output + dry run), implementation, complexities, applications, pros/cons.
+- Algorithm analysis: best/average/worst + time/space; Big-O/Ω/Θ with simple examples; comparison tables.
+- Maths: Given → Formula/Concept → Substitution → Calculation → Answer; never jump to answer; show every step and WHY (e.g. eigenvalue flow A → det(A−λI)=0 → values → vectors). Verify when appropriate.
+- SQL: state DDL/DML/DCL/TCL/DQL category; syntax → example → expected output. Normalization: dependency + anomaly first, then 1NF→BCNF with keys identified (functional/candidate/primary/partial/transitive).
+- Comparisons (stack vs queue, BFS vs DFS, merge vs quick, list vs tuple, GET vs POST, servlet vs JSP, 1NF vs 2NF, PK vs FK): use tables (Feature | A | B).
+- Debugging: error → why → corrected code → correction explained → other issues. Never bare code without explanation.
+- Quiz: only from requested subject/unit/topic; MCQ with A–D; withhold answers unless requested; evaluate afterwards with reasons.
+- Mock exam: first ask subject, unit(s), marks, difficulty (skip if already given); then realistic paper; on submission: marks, mistakes, weak topics, revision plan.
+- Revision: quick revision = definitions, formulas, algorithms, differences, diagrams, complexities, key questions. "One shot" = topic → definition → key concept → formula/algorithm → example → exam point, highest-value first.
+- Memory: track subject/unit/topic, difficulty, mistakes, progress, style. "Next" = next logical topic. "Continue" = resume. "I don't understand" = re-explain SAME concept more simply.
+- Language: match student (English/Hindi/Hinglish); "easy English" = very simple English.
+- Honesty: never fabricate syllabus topics, formulas, algorithms, exam patterns, marks or references; state uncertainty explicitly; internally verify Subject → Unit → Topic → Syllabus Status before answering.
+
 # END SYSTEM INSTRUCTIONS
 `;
 
@@ -1253,6 +1518,300 @@ interface GroundedResponse {
   cardData?: any;
 }
 
+// ===== MCA SEMESTER-I CAMPUS ASSESSMENT SUPPORT (Parth Pimplapure, 26MCAD30) =====
+
+interface McaQuizItem {
+  keys: string[];
+  question: string;
+  options: [string, string, string, string];
+  answer: string;
+  why: string;
+}
+
+/** Verified MCQ bank — every answer is checked against standard CS references. */
+const MCA_QUIZ_BANK: McaQuizItem[] = [
+  {
+    keys: ['avl', 'rotation', 'll', 'rr', 'lr', 'rl', 'balanced'],
+    question: 'An AVL tree needs an LL rotation. Which single rotation restores balance?',
+    options: ['Single right rotation', 'Single left rotation', 'Left-Right double rotation', 'No rotation is needed'],
+    answer: 'A',
+    why: 'LL imbalance (heavy in the left subtree of the left child) is fixed by a single right rotation.',
+  },
+  {
+    keys: ['binary search', 'bst search'],
+    question: 'What is the worst-case time complexity of Binary Search on a sorted array of n elements?',
+    options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
+    answer: 'B',
+    why: 'Each comparison halves the search interval, so at most log₂n + 1 comparisons are needed.',
+  },
+  {
+    keys: ['stack', 'lifo'],
+    question: 'Which data structure uses the LIFO principle and powers infix-to-postfix conversion?',
+    options: ['Queue', 'Stack', 'Linked List', 'Graph'],
+    answer: 'B',
+    why: 'A stack is Last-In-First-Out; operators are pushed/popped during infix-to-postfix conversion.',
+  },
+  {
+    keys: ['queue', 'fifo'],
+    question: 'Which data structure uses the FIFO principle and is used by Breadth First Search?',
+    options: ['Stack', 'Queue', 'Heap', 'Tree'],
+    answer: 'B',
+    why: 'A queue is First-In-First-Out; BFS enqueues neighbours level by level.',
+  },
+  {
+    keys: ['bfs', 'breadth first'],
+    question: 'BFS traversal of a graph uses which auxiliary data structure?',
+    options: ['Stack', 'Queue', 'Priority queue only', 'Hash table only'],
+    answer: 'B',
+    why: 'BFS explores vertices level by level, which is exactly queue (FIFO) order.',
+  },
+  {
+    keys: ['dfs', 'depth first'],
+    question: 'Recursive DFS traversal of a graph implicitly uses which structure?',
+    options: ['Queue', 'Call stack (LIFO)', 'Heap', 'Linked list'],
+    answer: 'B',
+    why: 'Recursion uses the call stack, so DFS goes deep (LIFO) before backtracking.',
+  },
+  {
+    keys: ['tuple', 'lists', 'list vs tuple', 'list', 'python'],
+    question: 'What is the key difference between a Python list and a tuple?',
+    options: ['Tuples are mutable, lists are not', 'Lists are mutable, tuples are immutable', 'Tuples cannot store mixed types', 'Lists cannot be indexed'],
+    answer: 'B',
+    why: 'Lists support item assignment/append; tuples are immutable once created.',
+  },
+  {
+    keys: ['3nf', '2nf', 'normal', 'normalization', 'bcnf'],
+    question: 'A relation in 2NF with a transitive dependency (A → B → C) violates which normal form requirement?',
+    options: ['1NF', '2NF', '3NF', 'It violates nothing'],
+    answer: 'C',
+    why: '3NF forbids transitive dependencies on the primary key; the relation must be decomposed further.',
+  },
+  {
+    keys: ['primary key', 'foreign key'],
+    question: 'What distinguishes a primary key from a foreign key?',
+    options: ['A foreign key must be numeric', 'A primary key uniquely identifies a row; a foreign key references a primary key in another table', 'A primary key can repeat values', 'There is no difference'],
+    answer: 'B',
+    why: 'Primary key = unique row identity (+ NOT NULL); foreign key = referential link to another table.',
+  },
+  {
+    keys: ['get', 'post', 'http'],
+    question: 'What is the key difference between HTTP GET and POST?',
+    options: ['GET sends data in the body, POST in the URL', 'GET is idempotent with parameters in the URL; POST carries data in the request body', 'POST cannot be used with forms', 'GET is encrypted, POST is not'],
+    answer: 'B',
+    why: 'GET appends parameters to the URL and should not change server state; POST sends data in the body.',
+  },
+  {
+    keys: ['eigenvalue', 'eigenvector', 'matrix'],
+    question: 'How are eigenvalues of a square matrix A found?',
+    options: ['By row-reducing A to zero', 'By solving det(A − λI) = 0', 'By transposing A twice', 'By computing the trace only'],
+    answer: 'B',
+    why: 'The characteristic equation det(A − λI) = 0 gives the eigenvalues λ; each is substituted back for eigenvectors.',
+  },
+  {
+    keys: ['bayes', 'conditional probability'],
+    question: "What does Bayes' Theorem compute?",
+    options: ['P(A ∩ B) directly', 'P(A|B) from P(B|A), P(A) and P(B)', 'The variance of a distribution', 'The rank of a matrix'],
+    answer: 'B',
+    why: "Bayes' rule inverts conditional probabilities: P(A|B) = P(B|A)·P(A) / P(B).",
+  },
+  {
+    keys: ['merge sort'],
+    question: 'What is the worst-case time complexity of Merge Sort?',
+    options: ['O(n)', 'O(n log n)', 'O(n²)', 'O(log n)'],
+    answer: 'B',
+    why: 'Merge Sort always divides into halves (log n levels) with linear merge work per level.',
+  },
+  {
+    keys: ['quick sort'],
+    question: 'What is the worst-case time complexity of Quick Sort, and when does it occur?',
+    options: ['O(n log n) on sorted input', 'O(n²) when the pivot repeatedly gives the most unbalanced partition', 'O(n) on reverse input', 'O(1) for small arrays'],
+    answer: 'B',
+    why: 'Bad pivots (e.g. always smallest/largest on sorted input) degrade partitioning to n + (n−1) + … = O(n²).',
+  },
+  {
+    keys: ['dijkstra'],
+    question: "What is the key requirement of Dijkstra's Algorithm?",
+    options: ['The graph must be unweighted', 'All edge weights must be non-negative', 'The graph must be a tree', 'It only works on directed graphs'],
+    answer: 'B',
+    why: 'Dijkstra greedily finalises the nearest unsettled vertex, which is only valid with non-negative weights.',
+  },
+  {
+    keys: ['knapsack', 'dynamic programming'],
+    question: 'The 0/1 Knapsack Problem is a classic example of which technique?',
+    options: ['Greedy only', 'Dynamic Programming (optimal substructure + overlapping subproblems)', 'Backtracking only', 'Divide and Conquer without memoisation'],
+    answer: 'B',
+    why: '0/1 Knapsack builds optimal solutions from optimal subsolutions, stored in a DP table.',
+  },
+];
+
+function pickMcaQuizItems(q: string, subjectId: string | null, count = 3): McaQuizItem[] {
+  const scored = MCA_QUIZ_BANK.map((item) => ({
+    item,
+    hits: item.keys.filter((k) => q.includes(k)).length,
+  })).filter((s) => s.hits > 0);
+  scored.sort((a, b) => b.hits - a.hits);
+  const picked = scored.slice(0, count).map((s) => s.item);
+  if (picked.length > 0) return picked;
+  const fallback = MCA_QUIZ_BANK.filter((item) =>
+    subjectId === 'dsa'
+      ? item.keys.some((k) => ['avl', 'binary search', 'stack', 'queue', 'bfs', 'dfs', 'merge sort', 'quick sort', 'dijkstra', 'knapsack'].includes(k))
+      : subjectId === 'adbms'
+        ? item.keys.some((k) => ['3nf', 'primary key'].includes(k))
+        : subjectId === 'java-web'
+          ? item.keys.some((k) => ['get'].includes(k))
+          : subjectId === 'maths'
+            ? item.keys.some((k) => ['eigenvalue', 'bayes'].includes(k))
+            : item.keys.some((k) => ['tuple'].includes(k)),
+  );
+  return fallback.slice(0, Math.min(count, 2));
+}
+
+function mcaSyllabusSource(match: McaMatch) {
+  return {
+    id: 'src-mca-1',
+    title: 'MCA Semester-I Official Syllabus — Campus Assessment Pack',
+    department: 'Institute of Technology (MCA Division D)',
+    updatedAt: 'Updated for 2026–27 assessments',
+    version: 'MCA-Sem1-2026',
+    section: match.subject
+      ? `${match.subject.name}${match.unit ? ` · ${match.unit.unit}: ${match.unit.title}` : ''}`
+      : 'Syllabus scope & study modes',
+    excerpt: match.matchedTopics.length > 0
+      ? `Matched syllabus topics: ${match.matchedTopics.slice(0, 4).join('; ')}.`
+      : 'Five subjects: Data Structures, Python, Java/Web, Mathematical Foundations, ADBMS.',
+  };
+}
+
+function mcaContextHeader(match: McaMatch): string {
+  const subj = match.subject ? `**${match.subject.name}**` : '**MCA Semester-I**';
+  const unit = match.unit ? ` · ${match.unit.unit}: ${match.unit.title}` : '';
+  return `${subj}${unit}`;
+}
+
+/** Deterministic fallback responses so syllabus search/chat is correct even without a live AI key. */
+function buildMcaAssessmentResponse(originalPrompt: string, match: McaMatch): GroundedResponse {
+  const q = originalPrompt.toLowerCase();
+  const base = {
+    intent: 'ACADEMICS',
+    responseMode: 'AI TUTOR' as const,
+    knowledgeLevel: 'LEVEL 2 — MCA Semester-I Official Syllabus',
+    confidence: 'high' as const,
+    confidenceLabel: 'HIGH CONFIDENCE' as const,
+    sources: [mcaSyllabusSource(match)],
+    suggestedActions: [
+      { label: 'Ask AI Tutor', targetView: 'ai-tutor' },
+      { label: 'Open My Courses', targetView: 'courses' },
+      { label: 'View Schedule', targetView: 'calendar' },
+    ],
+  };
+
+  if (match.status === 'unrelated') {
+    return {
+      ...base,
+      reply: `I am Campus Assessment Chatbot, designed specifically to help with your MCA Semester-I syllabus. This question is outside my academic scope. Please ask me something related to Data Structures, Python, Java/Web Programming, Mathematical Foundations, or ADBMS.`,
+    };
+  }
+
+  if (match.status === 'beyond-syllabus') {
+    const topic = match.matchedTopics[0] || 'this topic';
+    const subj = match.subject ? ` (${match.subject.name})` : '';
+    return {
+      ...base,
+      reply: `## Syllabus Check\nThis topic (**${topic}**)${subj} is related to your subject, but it is **not explicitly included in the syllabus** provided for this course. I can give you a brief overview if you want, but for your campus assessment preparation, I recommend focusing first on the listed syllabus.\n\n### Closest in-syllabus alternatives\n${match.subject ? match.subject.units.slice(0, 3).map((u) => `- **${u.unit}:** ${u.title}`).join('\n') : '- Data Structures, Python, Java/Web, Mathematical Foundations, ADBMS'}\n\nReply with the unit you want and I will teach it step by step.`,
+    };
+  }
+
+  const header = mcaContextHeader(match);
+  const topicLine = match.matchedTopics.length > 0
+    ? `\n**Syllabus topics matched:** ${match.matchedTopics.slice(0, 4).join(' · ')}`
+    : '';
+
+  if (match.mode === 'quiz' && !match.subject) {
+    return {
+      ...base,
+      reply: `## Quiz Setup\nWhich subject should the quiz come from?\n\n1. **Data Structures and Algorithmic Techniques**\n2. **Python Programming**\n3. **Java and Web Programming**\n4. **Mathematical Foundations for Computer Science**\n5. **ADBMS**\n\nReply with the subject (and unit/topic, e.g. "quiz on AVL rotations") and I will generate MCQs with answers and explanations.`,
+    };
+  }
+
+  if (match.mode === 'quiz') {
+    const items = pickMcaQuizItems(q, match.subject ? match.subject.id : null, 3);
+    if (items.length > 0) {
+      const body = items.map((item, i) => {
+        const opts = item.options.map((o, oi) => `${'ABCD'[oi]}. ${o}`).join('\n');
+        return `**Q${i + 1}.** ${item.question}\n${opts}\n\n<details><summary>Answer Q${i + 1}</summary>**${item.answer}.** ${item.why}</details>`;
+      }).join('\n\n---\n\n');
+      return {
+        ...base,
+        reply: `## Quiz — ${header}${topicLine}\nAnswer these first, then check the answers. Reply with your choices (e.g. "1A 2C 3B") and I will evaluate you.\n\n${body}\n\n### How you are scored\n- Each correct answer = full marks for that question.\n- After you answer I will explain every mistake and point you to the exact unit to revise.`,
+      };
+    }
+    return {
+      ...base,
+      reply: `## Practice Questions — ${header}${topicLine}\nTry these short-answer questions (answers withheld — reply with your attempts and I will evaluate):\n\n1. Define the concept in one precise examination sentence.\n2. Give one example with a step-by-step working.\n3. State one common mistake students make here and how to avoid it.\n\nReply with your answers and I will mark them like a university examiner.`,
+    };
+  }
+
+  if (match.mode === 'mock-exam') {
+    return {
+      ...base,
+      reply: `## Mock Exam Setup — ${header}\nI will build a realistic university-style paper. Please confirm:\n\n1. **Subject:** ${match.subject ? match.subject.name : '(which of the 5 subjects?)'}\n2. **Unit(s):** ${match.unit ? `${match.unit.unit} (${match.unit.title})` : 'one unit, a few units, or full syllabus?'}\n3. **Marks:** e.g. 30 / 50 / 70?\n4. **Difficulty:** Basic / Understanding / Application / Analysis?\n\nIf you already gave these details, say "start" and I will generate the paper now (Levels 1–5: definition → analysis). After you submit answers I will calculate marks, explain mistakes, find weak topics and give a revision plan.`,
+    };
+  }
+
+  if (match.mode === 'programming' || match.mode === 'debugging') {
+    return {
+      ...base,
+      reply: `## Programming Help — ${header}${topicLine}\nI will solve this in syllabus style:\n\n1. **Logic first** — approach in plain steps (Input → Process → Output).\n2. **Clean code** — ${match.subject && match.subject.id === 'python' ? 'Pythonic beginner-friendly code' : match.subject && match.subject.id === 'java-web' ? 'modern but simple Java' : 'syllabus-appropriate C-style implementation'} (tell me if you need another language).\n3. **Key lines explained** + sample input/output.\n4. **Time & space complexity** + common mistakes.\n\n${match.mode === 'debugging' ? 'Paste your code and the exact error message (or traceback) and I will: identify the error → explain why it occurs → show corrected code → explain the correction.' : 'Tell me the exact problem statement (and language, if not the default above) and I will write the solution now.'}`,
+    };
+  }
+
+  if (match.mode === 'maths-solve') {
+    return {
+      ...base,
+      reply: `## Mathematics Solution — ${header}${topicLine}\nI solve step by step, never jumping to the answer:\n\n**Given → Formula/Concept → Substitution → Calculation → Answer**\n\n- Matrices: I show every row operation; eigenvalues via **A → det(A − λI) = 0 → values → substitute each → eigenvectors**.\n- Probability: I state the rule used (addition / multiplication / Bayes) and WHY each step is done.\n- Final answer is boxed and verified where possible.\n\nPaste the exact problem (numbers/matrix included) and I will solve it now with every step shown.`,
+    };
+  }
+
+  if (match.mode === 'sql') {
+    return {
+      ...base,
+      reply: `## SQL Help — ${header}${topicLine}\nI always label the category first: **DDL / DML / DCL / TCL / DQL**.\n\nThen: **syntax → example query → expected output**.\n\nFor design/normalization: I identify **functional dependency → candidate key → primary key → partial/transitive dependency** first, then convert 1NF → 2NF → 3NF → BCNF, explaining the anomaly removed at each step.\n\nTell me the exact requirement (tables given? query wanted? relation to normalize?) and I will write it now.`,
+    };
+  }
+
+  if (match.mode === 'compare') {
+    return {
+      ...base,
+      reply: `## Comparison — ${header}${topicLine}\nI answer comparison questions with a table:\n\n| Feature | A | B |\n|---|---|---|\n| Definition | | |\n| Working | | |\n| Advantages | | |\n| Disadvantages | | |\n| Example | | |\n| Application | | |\n\nTell me the two items (e.g. "Stack vs Queue", "BFS vs DFS", "1NF vs 2NF") and I will fill this table with exam-ready points.`,
+    };
+  }
+
+  if (match.mode === 'revision' || match.mode === 'one-shot') {
+    const units = match.subject ? match.subject.units : [];
+    const plan = units.length > 0
+      ? units.map((u) => `- **${u.unit} — ${u.title}:** ${u.topics.slice(0, 3).join('; ')}${u.topics.length > 3 ? '; …' : ''}`).join('\n')
+      : '- Data Structures, Python, Java/Web, Mathematical Foundations, ADBMS';
+    return {
+      ...base,
+      reply: `## ${match.mode === 'one-shot' ? 'One-Shot Revision' : 'Quick Revision'} — ${header}\n${plan}\n\n### High-value exam points\n- Definitions + one example each (Level 1–2 marks).\n- One algorithm / query / derivation per unit with complexity (Level 3–4 marks).\n- One difference table per unit (Stack vs Queue, List vs Tuple, GET vs POST, 1NF vs 2NF …).\n\nName the unit and I will expand it as: topic → definition → key concept → formula/algorithm → example → exam point.`,
+    };
+  }
+
+  if (match.mode === 'exam-answer') {
+    const marks = q.includes('10') ? '10' : q.includes('2') ? '2' : '5';
+    return {
+      ...base,
+      reply: `## Exam Answer Guide (${marks} marks) — ${header}${topicLine}\nWrite it in this order for full marks:\n\n1. **Definition** (1 precise line).\n2. **Explanation** with a small diagram/table where useful.\n3. **Example** with step-by-step working.\n4. ${marks === '10' ? '**Algorithm/pseudocode + complexity + advantages/disadvantages**, then ' : ''}**Conclusion** (1 line).\n\nTell me the exact question and I will write the complete ${marks}-mark answer now.`,
+    };
+  }
+
+  const veryEasy = match.mode === 'very-easy';
+  return {
+    ...base,
+    reply: `## ${veryEasy ? 'Explained Very Simply' : 'Study Guide'} — ${header}${topicLine}\n${veryEasy ? 'Using very simple words (ask in Hinglish if you prefer — I will match your language).\n' : ''}Here is how we will master this:\n\n### Step 1 — Simple Definition\nOne easy-line meaning of the concept.\n### Step 2 — Real-Life Analogy\nA everyday example you already know.\n### Step 3 — Technical Definition\nThe exact academic lines to write in the exam.\n### Step 4 — Example\nA small worked example.\n### Step 5 — Step-by-Step\nThe process broken into small steps.\n### Step 6 — Exam Point\nWhat to write for 2 / 5 / 10 marks.\n### Step 7 — Quick Check\nReply "next" and I will ask you 1–3 small questions; if you say "I don't understand", I re-explain the SAME concept more simply.\n\nAsk your specific question now (e.g. "Teach me AVL rotations" or "Explain Bayes theorem") and I will teach it in this format.`,
+  };
+}
+
 function buildMasterPromptResponse(prompt: string): GroundedResponse {
   const q = prompt.toLowerCase();
 
@@ -1274,7 +1833,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
       sources: [
         {
           id: 'src-sec-1',
-          title: 'Zanzee AI Security & Governance Charter',
+          title: 'Kristu Jayanti AI Security & Governance Charter',
           department: 'Office of the CISO & Academic Computing',
           updatedAt: 'Updated September 28, 2026',
           version: 'SecPolicy v4.2',
@@ -1299,7 +1858,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
     q.includes("classmate's")
   ) {
     return {
-      reply: `I can't provide another student's private information. I can help you find the appropriate university contact instead.\n\nUnder **FERPA** and university privacy regulations, schedules, grades, financial records, and transcripts are strictly confidential to the authenticated student (**Alex Morgan**).`,
+      reply: `I can't provide another student's private information. I can help you find the appropriate university contact instead.\n\nUnder **FERPA** and university privacy regulations, schedules, grades, financial records, and transcripts are strictly confidential to the authenticated student (**Parth Pimplapure**).`,
       intent: 'ADMINISTRATION',
       responseMode: 'GENERAL ASSISTANT',
       knowledgeLevel: 'LEVEL 2 — Official University Knowledge',
@@ -1321,6 +1880,51 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
         { label: 'Review Privacy Settings', targetView: 'profile' },
       ],
     };
+  }
+
+  // 2.3 GREETINGS (Intent: GENERAL_ASSISTANCE — Friendly Hello Mode)
+  // Whole-message greetings only ("hii", "hello!") — never hijacks real
+  // questions like "hi, explain AVL" (those keep flowing to study blocks).
+  {
+    const greetClean = q.trim().replace(/[!.,?~]+$/g, '').trim();
+    if (
+      [
+        'hi', 'hii', 'hiii', 'hello', 'helo', 'hey', 'heyy',
+        'namaste', 'yo', 'howdy', 'good morning', 'good afternoon', 'good evening',
+      ].includes(greetClean)
+    ) {
+      return {
+        reply: `## Hello Parth! 👋\nI am your **Campus Assessment Chatbot** for **MCA Semester-I (Division D)**.\n\nAsk me anything like:\n- **Learn:** "Teach me AVL rotations" or "Explain Dijkstra's algorithm"\n- **Solve:** "Find the rank of this matrix …" or "Write SQL for …"\n- **Practice:** "Give me an MCQ quiz on Python lists" or "Mock test on DBMS"\n- **Revise:** "One-shot revision of Unit 3 Data Structures"\n\nI can also check your schedule, assignments, grades and fees. What shall we study first?`,
+        intent: 'GENERAL_ASSISTANCE',
+        responseMode: 'GENERAL ASSISTANT',
+        knowledgeLevel: 'LEVEL 1 — Student Authorized Profile (Parth Pimplapure, 26MCAD30)',
+        confidence: 'high',
+        confidenceLabel: 'HIGH CONFIDENCE',
+        sources: [mcaSyllabusSource({ subject: null, unit: null, matchedTopics: [], mode: 'general', status: 'general', score: 0 })],
+        suggestedActions: [
+          { label: 'Ask AI Tutor', targetView: 'ai-tutor' },
+          { label: 'Open My Courses', targetView: 'courses' },
+          { label: 'View Academic Progress', targetView: 'academic-progress' },
+        ],
+      };
+    }
+  }
+
+  // 2.4 MCA SEMESTER-I CAMPUS ASSESSMENT (Intent: ACADEMICS / AI_TUTOR — Syllabus-Grounded Study Mode)
+  {
+    const mca = matchMcaSyllabus(prompt);
+    const explicitAssessmentMode =
+      mca.mode === 'quiz' || mca.mode === 'mock-exam' || mca.mode === 'exam-answer' ||
+      ((mca.mode === 'debugging' || mca.mode === 'programming') &&
+        /code|program|traceback|syntax|bug/.test(q));
+    if (
+      mca.status === 'unrelated' ||
+      mca.status === 'beyond-syllabus' ||
+      (mca.status === 'in-syllabus' && mca.subject && mca.score >= 2) ||
+      (explicitAssessmentMode && (mca.subject || mca.score >= 1))
+    ) {
+      return buildMcaAssessmentResponse(prompt, mca);
+    }
   }
 
   // 2.5 EXPLAIN IN SIMPLE POINTS (Intent: ACADEMICS / AI_TUTOR — Student Comprehension Mode)
@@ -1363,7 +1967,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
           {
             icon: 'award',
             title: 'Point 3: Your GPA & Standing',
-            description: 'Cumulative GPA is 3.82 (Dean’s Honor List). You have completed 72/120 credits toward your Bachelor of Science degree.',
+            description: 'Cumulative GPA is 3.82 (Dean’s Honor List). You have completed 72/120 credits toward your MCA degree (Division D, 26MCAD30).',
             status: 'Dean’s Honor List',
           },
           {
@@ -1399,7 +2003,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
           department: 'Academic Advising & Registrar',
           updatedAt: 'Updated today',
           version: 'StudentGuide-2026',
-          section: 'Executive Summary for Alex Morgan',
+          section: 'Executive Summary for Parth Pimplapure',
           excerpt: 'Verified student records and deadlines formatted for clear student comprehension.',
         },
       ],
@@ -1440,7 +2044,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
           department: 'Office of the University Registrar',
           updatedAt: 'Synced 15 mins ago',
           version: 'Official Audit v2026.1',
-          section: 'Undergraduate Grade Records — Alex Morgan (#ZC-88412)',
+          section: 'MCA Grade Records — Parth Pimplapure (#26MCAD30, Division D)',
           excerpt: 'Student is in Good Standing. Dean’s Honor List Fall 2025, Spring 2026. Cumulative GPA: 3.82.',
         },
       ],
@@ -1454,7 +2058,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
   // 4. STUDENT PERSONALIZATION: SCHEDULE / TOMORROW'S CLASSES / NEXT CLASS (Intent: CALENDAR / COURSES)
   if (q.includes('tomorrow') || q.includes('next class') || q.includes('schedule') || q.includes('classes do i have') || q.includes('my classes')) {
     return {
-      reply: `## Answer\nYou have **3 classes tomorrow**:\n\n- **10:00 AM** — CS 201: Data Structures (Room 204)\n- **1:00 PM** — MATH 210: Discrete Mathematics (Room 108)\n- **3:00 PM** — BIO 101: General Biology (Science Building)\n\n### Next Steps\n1. Review the Week 6 Binary Tree notes before CS 201.\n2. Complete problem set draft for MATH 210.\n3. Bring laboratory safety goggles to BIO 101 in the Science Building.\n\n### Source\nAuthorized Student Schedule (Alex Morgan, #ZC-88412) & Academic Calendar 2026–27.`,
+      reply: `## Answer\nYou have **3 classes tomorrow**:\n\n- **10:00 AM** — CS 201: Data Structures (Room 204)\n- **1:00 PM** — MATH 210: Discrete Mathematics (Room 108)\n- **3:00 PM** — BIO 101: General Biology (Science Building)\n\n### Next Steps\n1. Review the Week 6 Binary Tree notes before CS 201.\n2. Complete problem set draft for MATH 210.\n3. Bring laboratory safety goggles to BIO 101 in the Science Building.\n\n### Source\nAuthorized Student Schedule (Parth Pimplapure, #26MCAD30) & Academic Calendar 2026–27.`,
       intent: 'CALENDAR',
       responseMode: 'GENERAL ASSISTANT',
       knowledgeLevel: 'LEVEL 1 — Student-Specific Authorized Information',
@@ -1476,7 +2080,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
           department: 'Office of the University Registrar',
           updatedAt: 'Updated September 20, 2026',
           version: 'SIS-Live-2026',
-          section: 'Enrolled Section Timetable (Alex Morgan)',
+          section: 'Enrolled Section Timetable (Parth Pimplapure)',
           excerpt: 'CS 201: Data Structures (10:00 AM, Room 204); MATH 210: Discrete Math (1:00 PM, Room 108); BIO 101: Biology (3:00 PM, Science Bldg).',
         },
       ],
@@ -1534,7 +2138,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
     q.includes('degree progress')
   ) {
     return {
-      reply: `## Answer\nSwitching into your **Spring 2027 Registration & Degree Planning Workflow**:\n\n- **Current Program:** B.Sc. in Computer Science\n- **Completed Credits:** **72 of 120 credits (60%)**\n- **Remaining Credits Required:** **48 credits** (20 Major Core, 10 General Education, 18 Electives)\n- **Registration Status:** Opens **October 12 at 8:00 AM**\n\n### Available Courses & Prerequisites\n1. **CS 310 — Algorithms & Complexity (4 cr):** Prerequisites CS 201 & MATH 210 (Met ✅)\n2. **CS 340 — Operating Systems (4 cr):** Prerequisite CS 201 (Met ✅)\n3. **MATH 305 — Linear Algebra (3 cr):** Prerequisite MATH 210 (Met ✅)\n4. **PHIL 220 — Ethics in Technology (3 cr):** General Education (Met ✅)\n\n### Schedule Conflicts\n**No timetable conflicts detected** across recommended sections!`,
+      reply: `## Answer\nSwitching into your **Spring 2027 Registration & Degree Planning Workflow**:\n\n- **Current Program:** MCA · Division D (Parth Pimplapure, 26MCAD30)\n- **Completed Credits:** **72 of 120 credits (60%)**\n- **Remaining Credits Required:** **48 credits** (20 Major Core, 10 General Education, 18 Electives)\n- **Registration Status:** Opens **October 12 at 8:00 AM**\n\n### Available Courses & Prerequisites\n1. **CS 310 — Algorithms & Complexity (4 cr):** Prerequisites CS 201 & MATH 210 (Met ✅)\n2. **CS 340 — Operating Systems (4 cr):** Prerequisite CS 201 (Met ✅)\n3. **MATH 305 — Linear Algebra (3 cr):** Prerequisite MATH 210 (Met ✅)\n4. **PHIL 220 — Ethics in Technology (3 cr):** General Education (Met ✅)\n\n### Schedule Conflicts\n**No timetable conflicts detected** across recommended sections!`,
       intent: 'REGISTRATION',
       responseMode: 'ACADEMIC ADVISOR',
       knowledgeLevel: 'LEVEL 1 & LEVEL 2 — Authorized Degree Audit & Official Calendar',
@@ -1542,7 +2146,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
       confidenceLabel: 'HIGH CONFIDENCE',
       cardType: 'registration',
       cardData: {
-        currentProgram: 'B.Sc. in Computer Science',
+        currentProgram: 'MCA · Division D',
         completedCredits: 72,
         requiredCredits: 120,
         remainingCredits: 48,
@@ -1567,12 +2171,12 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
         },
         {
           id: 'src-reg-2',
-          title: 'Computer Science Undergraduate Degree Audit',
-          department: 'Department of Computer Science',
+          title: 'Computer Applications (MCA Division D) Degree Audit',
+          department: 'Department of Computer Applications (MCA)',
           updatedAt: 'Updated September 15, 2026',
           version: 'Degree Audit v2026',
           section: 'Degree Requirements: 72/120 Credits Completed',
-          excerpt: 'Student Alex Morgan has completed 72 credits; 48 credits remain for graduation (expected May 2028).',
+          excerpt: 'Student Parth Pimplapure has completed 72 credits; 48 credits remain for graduation (expected May 2028).',
         },
       ],
       suggestedActions: [
@@ -1627,7 +2231,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
     q.includes('email my advisor')
   ) {
     return {
-      reply: `## Answer\nHere are your faculty contacts and academic advising details:\n\n- **Academic Advisor:** **Dr. Miriam Hawthorne** (Founders Hall, Suite 204 • \`advising@zanzee.edu\`)\n  * Drop-in & Appointment Hours: Mon & Wed 2:00 PM – 4:30 PM\n- **CS 201 Professor:** **Prof. Sarah Johnson** (Turing Hall 410 • \`sjohnson@zanzee.edu\`)\n  * Office Hours: Tue & Thu 2:00 PM – 4:00 PM\n- **MATH 210 Professor:** **Prof. Marcus Vance** (Euler 212 • \`mvance@zanzee.edu\`)\n  * Office Hours: Mon & Wed 11:00 AM – 1:00 PM\n\nYou can book an appointment or send a direct dispatch below.`,
+      reply: `## Answer\nHere are your faculty contacts and academic advising details:\n\n- **Academic Advisor:** **Dr. Miriam Hawthorne** (Admin Block, Suite 204 • \`advising@kjit.edu.in\`)\n  * Drop-in & Appointment Hours: Mon & Wed 2:00 PM – 4:30 PM\n- **CS 201 Professor:** **Prof. Sarah Johnson** (Tech Block 410 • \`sjohnson@kjit.edu.in\`)\n  * Office Hours: Tue & Thu 2:00 PM – 4:00 PM\n- **MATH 210 Professor:** **Prof. Marcus Vance** (Euler 212 • \`mvance@kjit.edu.in\`)\n  * Office Hours: Mon & Wed 11:00 AM – 1:00 PM\n\nYou can book an appointment or send a direct dispatch below.`,
       intent: 'ACADEMIC_ADVISING',
       responseMode: 'ACADEMIC ADVISOR',
       knowledgeLevel: 'LEVEL 1 & LEVEL 2 — Faculty Directory & Advising Schedule',
@@ -1637,12 +2241,12 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
       cardData: {
         advisorName: 'Dr. Miriam Hawthorne',
         advisorTitle: 'Director of Undergraduate Studies & Academic Advisor',
-        advisorOffice: 'Founders Hall, Suite 204',
-        advisorEmail: 'advising@zanzee.edu',
+        advisorOffice: 'Admin Block, Suite 204',
+        advisorEmail: 'advising@kjit.edu.in',
         nextAvailable: 'Wednesday, Oct 7 at 2:00 PM',
         professorName: 'Prof. Sarah Johnson',
         professorCourse: 'CS 201: Data Structures',
-        professorOffice: 'Turing Hall 410',
+        professorOffice: 'Tech Block 410',
         professorHours: 'Tue & Thu 2:00 PM – 4:00 PM',
       },
       sources: [
@@ -1762,7 +2366,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
     q.includes('internet')
   ) {
     return {
-      reply: `## Problem\nYour connection or login issue is likely caused by the **Zanzee-Secure 802.1X RADIUS certificate rotation** or an expired **Okta MFA session**.\n\n### Troubleshooting Steps\n1. Open your device's Wi-Fi settings, select **Forget Network** on \`Zanzee-Secure\`, and reconnect using \`amorgan@zanzee.edu\`.\n2. When prompted, accept the new \`auth.zanzee.edu\` security certificate.\n3. For account or MFA push issues, open the Okta Verify app and refresh your push code.\n\n### If That Doesn't Work\nClick **Open IT Ticket** below to connect with on-duty network engineers at Turing Hall.`,
+      reply: `## Problem\nYour connection or login issue is likely caused by the **KJIT-Secure 802.1X RADIUS certificate rotation** or an expired **Okta MFA session**.\n\n### Troubleshooting Steps\n1. Open your device's Wi-Fi settings, select **Forget Network** on \`KJIT-Secure\`, and reconnect using \`ppimplapure@kjit.edu.in\`.\n2. When prompted, accept the new \`auth.kjit.edu.in\` security certificate.\n3. For account or MFA push issues, open the Okta Verify app and refresh your push code.\n\n### If That Doesn't Work\nClick **Open IT Ticket** below to connect with on-duty network engineers at Tech Block.`,
       intent: 'IT_SUPPORT',
       responseMode: 'IT SUPPORT',
       knowledgeLevel: 'LEVEL 2 — Official IT Documentation',
@@ -1772,9 +2376,9 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
       cardData: {
         issue: 'RADIUS 802.1X Certificate Rotation',
         steps: [
-          'Forget "Zanzee-Secure" network on device',
-          'Reconnect using "amorgan@zanzee.edu" and student password',
-          'Accept new server certificate "auth.zanzee.edu"',
+          'Forget "KJIT-Secure" network on device',
+          'Reconnect using "ppimplapure@kjit.edu.in" and student password',
+          'Accept new server certificate "auth.kjit.edu.in"',
           'If using Okta Verify MFA, refresh one-time push token',
         ],
         networkHealth: { gateway: 'Operational', radius: 'Operational', vpn: 'Operational' },
@@ -1787,7 +2391,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
           updatedAt: 'Updated October 1, 2026',
           version: 'KB-4092',
           section: 'Section 3: 802.1X Certificate Renewal & MFA Reset',
-          excerpt: 'Following the October 2026 RADIUS update, clients must re-trust auth.zanzee.edu.',
+          excerpt: 'Following the October 2026 RADIUS update, clients must re-trust auth.kjit.edu.in.',
         },
       ],
       suggestedActions: [
@@ -1851,7 +2455,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
     q.includes('quad')
   ) {
     return {
-      reply: `## Answer\nHere are upcoming university events and student organizations this week:\n\n- **Annual Zanzee Fall Hackathon:** Oct 16–17 (Turing Innovation Hub)\n- **ACM Chapter: Systems & Compilers Talk:** Thursday, Oct 8 at 6:00 PM (Euler 104)\n- **Fall Student Organization & Club Fair:** Friday, Oct 9 at 2:00 PM (Campus Quad)\n\nOver 80 registered student clubs are recruiting new members this semester.`,
+      reply: `## Answer\nHere are upcoming university events and student organizations this week:\n\n- **Annual Kristu Jayanti Fall Hackathon:** Oct 16–17 (Tech Innovation Hub)\n- **ACM Chapter: Systems & Compilers Talk:** Thursday, Oct 8 at 6:00 PM (Euler 104)\n- **Fall Student Organization & Club Fair:** Friday, Oct 9 at 2:00 PM (Campus Quad)\n\nOver 80 registered student clubs are recruiting new members this semester.`,
       intent: 'STUDENT_LIFE',
       responseMode: 'CAMPUS GUIDE',
       knowledgeLevel: 'LEVEL 2 — Official University Knowledge',
@@ -1860,7 +2464,7 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
       cardType: 'student_life',
       cardData: {
         events: [
-          { title: 'Annual Zanzee Fall Hackathon', date: 'Oct 16–17, 2026', location: 'Turing Innovation Hub', time: '9:00 AM – 8:00 PM', category: 'Academic' },
+          { title: 'Annual Kristu Jayanti Fall Hackathon', date: 'Oct 16–17, 2026', location: 'Tech Innovation Hub', time: '9:00 AM – 8:00 PM', category: 'Academic' },
           { title: 'ACM Chapter: Systems & Compilers Talk', date: 'Thursday, Oct 8', location: 'Euler Pavilion 104', time: '6:00 PM', category: 'Technology' },
           { title: 'Fall Student Organization Fair', date: 'Friday, Oct 9', location: 'Campus Quad', time: '2:00 PM – 5:00 PM', category: 'Student Life' },
         ],
@@ -1880,6 +2484,92 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
       suggestedActions: [
         { label: 'View Campus Calendar', targetView: 'calendar' },
         { label: 'Explore Campus Services', targetView: 'campus-services' },
+      ],
+    };
+  }
+
+  // 13.5 FACULTY, PROFESSORS & TEACHERS (Official faculty.php)
+  if (
+    q.includes('facult') ||
+    q.includes('teacher') ||
+    q.includes('professor') ||
+    q.includes('dean') ||
+    q.includes('hod') ||
+    q.includes('muruganantham') ||
+    q.includes('r kumar') ||
+    q.includes('velmurugan') ||
+    q.includes('sheeja') ||
+    q.includes('karthik') ||
+    q.includes('who teaches')
+  ) {
+    return {
+      reply: `## Kristu Jayanti Institute of Technology — Faculty & Mentors\n\nThe Postgraduate Department of Computer Science features **50 distinguished faculty members and industry leaders**:\n\n### Academic Leadership:\n* **Dr. R. Kumar** — Professor and Dean, School of Computational and Physical Sciences (32 Years Experience, Data Mining & Network Security)\n* **Dr. Muruganantham A** — Head, Department of Computer Science (PG) (29 Years Experience, Web Mining, Java & Middleware Technologies)\n* **Dr. Velmurugan R** — Coordinator, PG Computer Science (26 Years Experience, M.Sc., Ph.D.)\n\n### Prominent Researchers & Professors:\n* **Dr. S. Karthik** (19+ yrs exp) — Deep Learning, Software Engineering, Networks, Cyber Security\n* **Dr. Sheeja S** (23 yrs exp) — Computer Networks, IoT, Big Data Analytics\n* **Dr. M. Subramaniakumar** (15 yrs exp) — Data Mining\n* **Dr. S. Satheesh Kumar** (16.5 yrs exp) — IoT Networks, Cryptography & Network Security\n\n### Industry Professors of Practice:\n* **Mr. Srinivasan Sairamachandran** (Senior Software Engineering Manager, Accenture, Detroit, USA)\n* **Mr. Raghu Prasad K S** (CEO, Kaushalya Technologies — IoT)\n* **Mr. Amal Thayyil** (Senior Engineering Manager, Akamai Technologies)\n* **Mr. Benson Beadict** (Solution Consultant, Ivy Mobility Pvt Ltd)\n\nYou can explore complete profiles, qualifications, research publications, and photos in the **Faculty & Mentors** directory.`,
+      intent: 'ACADEMICS',
+      responseMode: 'CAMPUS GUIDE',
+      knowledgeLevel: 'LEVEL 2 — Official University Knowledge',
+      confidence: 'high',
+      confidenceLabel: 'HIGH CONFIDENCE',
+      cardType: 'faculty',
+      sources: [
+        {
+          id: 'src-fac-1',
+          title: 'Institute of Technology Faculty Profile Directory',
+          department: 'Postgraduate Department of Computer Science',
+          updatedAt: 'Updated 2026',
+          version: 'Official Faculty Register',
+          section: 'Faculty Members & Professors of Practice',
+          excerpt: 'Directory of 50 faculty members, qualifications, specializations, VIDWAN IDs, and industry mentorships.',
+        },
+      ],
+      suggestedActions: [
+        { label: 'View Faculty Directory', targetView: 'faculty-directory' },
+        { label: 'View Admissions', targetView: 'admissions' },
+      ],
+    };
+  }
+
+  // 13.8 ADMISSIONS / INSTITUTE OF TECHNOLOGY / ELIGIBILITY / FEES (Official admission.php)
+  if (
+    q.includes('admission') ||
+    q.includes('eligib') ||
+    q.includes('fee') ||
+    q.includes('mca') ||
+    q.includes('data science') ||
+    q.includes('cyber security') ||
+    q.includes('institute of technology') ||
+    q.includes('apply') ||
+    q.includes('how to apply') ||
+    q.includes('tuition')
+  ) {
+    return {
+      reply: `## Kristu Jayanti Institute of Technology — Official Admissions (2026 Batch)\n\n### 1. Master of Computer Applications (MCA) — 2 Years\n- **Eligibility:** Bachelor’s degree in Arts, Science, Commerce, or Engineering with not less than 50% marks (45% for SC/ST) aggregate from a recognized University. Must have studied Mathematics at 10+2 Higher Secondary or UG level (Bridge course mandatory for those without Mathematics background).\n- **Academic Fee:** Year I: ₹1,90,000 | Year II: ₹1,90,000\n- **Registration Fee:** ₹5,000 (Non-Refundable) | **Application Processing Fee:** ₹1,500\n\n### 2. M.Sc. Data Science — 2 Years\n- **Eligibility:** B.Sc. Data Science / Analytics / Computer Science / BCA / B.E. / B.Tech or B.Sc. Mathematics / Statistics / Physics / Electronics with min. 50% (45% SC/ST). Mandatory Bridge Course in CS for non-CS graduates.\n- **Academic Fee:** Year I: ₹1,40,000 | Year II: ₹1,40,000\n- **Registration Fee:** ₹5,000 (Non-Refundable) | **Application Processing Fee:** ₹1,200\n\n### 3. M.Sc. Cyber Security — 2 Years\n- **Eligibility:** Bachelor’s in CS / BCA / IT or equivalent with min. 50% (45% SC/ST). B.E./B.Tech in relevant disciplines with strong Math & CS background also eligible.\n- **Academic Fee:** Year I: ₹1,50,000 | Year II: ₹1,50,000\n- **Registration Fee:** ₹5,000 (Non-Refundable) | **Application Processing Fee:** ₹1,200\n\n### Additional Institutional Fees (First Year Only):\n- Kristu Jayanti Students & Karnataka Public Universities: **NIL**\n- Other Karnataka Institutions: **₹10,000** | Non-Karnataka States: **₹20,000**\n- NRI: **₹40,000** | SAARC: **₹50,000** | Foreign Students: **₹1,00,000**\n\n*Strict Policy: The Management / University does not collect any type of Capitation fees or Donation.*`,
+      intent: 'ADMISSIONS',
+      responseMode: 'ADMISSIONS ASSISTANT',
+      knowledgeLevel: 'LEVEL 2 — Official University Knowledge',
+      confidence: 'high',
+      confidenceLabel: 'HIGH CONFIDENCE',
+      cardType: 'admissions',
+      cardData: {
+        department: 'Postgraduate Department of Computer Science',
+        head: 'Dr. Muruganantham A, Head, Institute of Technology',
+        contactPhone: '080-68737777',
+        contactEmail: 'admission@kristujayanti.com',
+        portalUrl: 'https://www.kristujayanti.edu.in/academics/institute-of-technology/admission.php',
+      },
+      sources: [
+        {
+          id: 'src-adm-1',
+          title: 'Institute of Technology Admission & Fee Structure 2026',
+          department: 'Kristu Jayanti Admissions Office & Bodhi Niketan Trust',
+          updatedAt: 'Updated for 2026 Batch',
+          version: 'Official Bulletin v26.1',
+          section: 'Institute of Technology Eligibility Criteria & Fee Schedule',
+          excerpt: 'MCA, M.Sc. Data Science, and M.Sc. Cyber Security eligibility, bridge course requirements, and non-capitation fee structure.',
+        },
+      ],
+      suggestedActions: [
+        { label: 'View Admissions Portal', targetView: 'campus-services' },
+        { label: 'Contact Admissions Desk', targetView: 'campus-services' },
       ],
     };
   }
@@ -1906,13 +2596,13 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
       cardData: {
         department: 'Academic Advising & Registrar',
         reason: 'Student-specific academic decision or policy petition requires advisor approval',
-        contactOption: 'advising@zanzee.edu · Founders Hall, Suite 204',
+        contactOption: 'advising@kjit.edu.in · Admin Block, Suite 204',
         appointmentOption: 'Next available advising slot: Wednesday, Oct 7 at 2:00 PM',
       },
       escalationDetails: {
         department: 'Academic Advising Center (Dr. Miriam Hawthorne)',
         reason: 'Student-specific academic decision or policy petition requires advisor approval',
-        contactOption: 'advising@zanzee.edu · Founders Hall, Suite 204',
+        contactOption: 'advising@kjit.edu.in · Admin Block, Suite 204',
         appointmentOption: 'Next available advising slot: Wednesday, Oct 7 at 2:00 PM',
         primaryActionLabel: 'Connect with Advisor',
         targetView: 'messages',
@@ -1937,9 +2627,24 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
     };
   }
 
+  // 14.5 WEAK single-keyword study hit — runs AFTER every portal block
+  // (grades, schedule, events, admissions, …) so those keep priority, but no
+  // study question ever falls through to the generic summary. E.g. "what is tree".
+  {
+    const mcaWeak = matchMcaSyllabus(prompt);
+    if (
+      mcaWeak.subject &&
+      mcaWeak.score >= 1 &&
+      mcaWeak.mode !== 'general' &&
+      mcaWeak.status === 'general'
+    ) {
+      return buildMcaAssessmentResponse(prompt, { ...mcaWeak, status: 'in-syllabus' });
+    }
+  }
+
   // 15. DEFAULT GENERAL ASSISTANCE (Intent: GENERAL_ASSISTANCE)
   return {
-    reply: `## Answer\nHere is your verified summary for **Alex Morgan** (B.Sc. Computer Science, Fall 2026):\n\n- **Next Class:** CS 201 — Data Structures tomorrow at **10:00 AM** (Room 204)\n- **Upcoming Assignment:** CS 201 Binary Trees due **Friday at 11:59 PM**\n- **Course Registration:** Opens **October 12 at 8:00 AM** (72/120 credits completed)\n- **Financial Aid:** Proof of Enrollment due **October 15, 2026**\n\nAsk me anything or use the action shortcuts below to navigate university services.`,
+    reply: `## Answer\nHere is your verified summary for **Parth Pimplapure** (MCA · Division D, Roll No 26MCAD30, Fall 2026):\n\n- **Next Class:** CS 201 — Data Structures tomorrow at **10:00 AM** (Room 204)\n- **Upcoming Assignment:** CS 201 Binary Trees due **Friday at 11:59 PM**\n- **Course Registration:** Opens **October 12 at 8:00 AM** (72/120 credits completed)\n- **Financial Aid:** Proof of Enrollment due **October 15, 2026**\n\nAsk me anything or use the action shortcuts below to navigate university services.`,
     intent: 'GENERAL_ASSISTANCE',
     responseMode: 'GENERAL ASSISTANT',
     knowledgeLevel: 'LEVEL 1 & LEVEL 2 — Authorized Student Profile & University Handbook',
@@ -1976,21 +2681,28 @@ function buildMasterPromptResponse(prompt: string): GroundedResponse {
 // GET /api/ai/university-config — Returns official University Configuration per Master Prompt Section 1
 app.get('/api/ai/university-config', (req, res) => {
   res.json({
-    universityName: 'Zanzee College (Northstar University Consortium)',
-    universityDomain: 'zanzee.edu',
-    country: 'United States',
-    timezone: 'America/New_York (Eastern Time)',
+    universityName: 'Kristu Jayanti Institute of Technology',
+    universityDomain: 'kjit.edu.in',
+    country: 'India',
+    timezone: 'Asia/Kolkata (IST)',
     academicYear: '2026–2027',
-    studentPortal: 'portal.zanzee.edu (SIS Student Information System)',
-    lms: 'Zanzee Canvas LMS (lms.zanzee.edu)',
-    registrar: 'Office of the University Registrar, Founders Hall Suite 102 (registrar@zanzee.edu, ext. 4201)',
-    financialAid: 'Office of Financial Aid & Scholarships, Founders Hall Suite 104 (finaid@zanzee.edu, ext. 4205)',
-    itSupport: 'Enterprise IT Help Desk, Turing Hall Ground Floor (helpdesk@zanzee.edu, ext. 4357, 8:00 AM – 8:00 PM)',
-    library: 'Grand Library, Central Campus Quad (library@zanzee.edu, Open 24/7, Reference Desk staffed until 12:00 AM)',
-    academicAdvising: 'Academic Advising Center, Founders Hall Suite 204 (advising@zanzee.edu, Dr. Miriam Hawthorne)',
-    admissions: 'Undergraduate Admissions, Welcome Pavilion (admissions@zanzee.edu)',
-    careerServices: 'Center for Career Development & Internships, Turing Innovation Hub (careers@zanzee.edu)',
-    campusServices: 'Campus Operations & Auxiliary Services, Student Center Room 110 (services@zanzee.edu)',
+    studentPortal: 'portal.kjit.edu.in (KJIT SIS Student Information System)',
+    lms: 'KJIT Canvas LMS (lms.kjit.edu.in)',
+    registrar: 'Office of the University Registrar, Admin Block Suite 102 (registrar@kjit.edu.in, ext. 4201)',
+    financialAid: 'Office of Financial Aid & Scholarships, Admin Block Suite 104 (finaid@kjit.edu.in, ext. 4205)',
+    itSupport: 'Enterprise IT Help Desk, Tech Block Ground Floor (helpdesk@kjit.edu.in, ext. 4357, 8:00 AM – 8:00 PM)',
+    library: 'Central Library, Central Campus (library@kjit.edu.in, Open 24/7, Reference Desk staffed until 12:00 AM)',
+    academicAdvising: 'Academic Advising Center, Admin Block Suite 204 (advising@kjit.edu.in, Dr. Miriam Hawthorne)',
+    admissions: 'Kristu Jayanti Institute of Technology Admissions Office, Admin Block (admission@kristujayanti.com, Phone: 080-68737777)',
+    admissionWebsite: 'https://www.kristujayanti.edu.in/academics/institute-of-technology/admission.php',
+    headOfInstitute: 'Dr. Muruganantham A, Head, Institute of Technology',
+    programmes: [
+      { name: 'Master of Computer Applications (MCA)', duration: '2 Years', year1Fee: '₹1,90,000', year2Fee: '₹1,90,000', regFee: '₹5,000', processingFee: '₹1,500' },
+      { name: 'M.Sc. Data Science', duration: '2 Years', year1Fee: '₹1,40,000', year2Fee: '₹1,40,000', regFee: '₹5,000', processingFee: '₹1,200' },
+      { name: 'M.Sc. Cyber Security', duration: '2 Years', year1Fee: '₹1,50,000', year2Fee: '₹1,50,000', regFee: '₹5,000', processingFee: '₹1,200' }
+    ],
+    careerServices: 'Center for Career Development & Placements, Innovation Hub (careers@kjit.edu.in)',
+    campusServices: 'Campus Operations & Student Affairs, Student Center Room 110 (services@kjit.edu.in)',
     emergencyContact: 'Campus Safety & Emergency Response, 24/7 Hotline: (555) 019-9111 / Blue Light Stations across Campus Quad',
   });
 });
@@ -1998,10 +2710,11 @@ app.get('/api/ai/university-config', (req, res) => {
 // POST /api/ai/chat — Unified AI Campus Assistant governed by Master Prompt
 app.post('/api/ai/chat', async (req, res) => {
   try {
-    const { prompt, mode, attachmentName } = req.body as {
+    const { prompt, mode, attachmentName, history } = req.body as {
       prompt?: string;
       mode?: string;
       attachmentName?: string;
+      history?: Array<{ role: string; text: string }>;
     };
     const userPrompt = (prompt || '').trim();
     if (!userPrompt) {
@@ -2025,14 +2738,62 @@ app.post('/api/ai/chat', async (req, res) => {
       });
     }
 
+    // 0) Groq (Parth's Groq key) — first provider for every chatbot search
+    try {
+      const groqFast = await callGroq({
+        system:
+          CAMPUS_AI_MASTER_PROMPT +
+          (mode ? `\nActive Response Mode Override: ${mode}` : ''),
+        user: attachmentName ? `[Uploaded Document: ${attachmentName}]\n${userPrompt}` : userPrompt,
+        history,
+      });
+      if (groqFast) {
+        return res.json({
+          ...baseRAG,
+          reply: groqFast.text,
+          providerUsed: `Groq ${groqFast.model} · MCA Assessment RAG`,
+        });
+      }
+    } catch (err) {
+      console.warn('Groq failed, trying Grok/OpenRouter:', err);
+    }
+
+    // 1) Grok via OpenRouter (Parth's key) — primary provider for every chatbot search
+    try {
+      const grok = await callGrok({
+        system:
+          CAMPUS_AI_MASTER_PROMPT +
+          (mode ? `\nActive Response Mode Override: ${mode}` : ''),
+        user: attachmentName ? `[Uploaded Document: ${attachmentName}]\n${userPrompt}` : userPrompt,
+        history,
+      });
+      if (grok) {
+        return res.json({
+          ...baseRAG,
+          reply: grok.text,
+          providerUsed: `Grok ${grok.model} via OpenRouter · MCA Assessment RAG`,
+        });
+      }
+    } catch (err) {
+      console.warn('Grok (OpenRouter) failed, trying Gemini/fallback:', err);
+    }
+
     const ai = getGeminiClient();
     if (ai) {
       try {
+        let conversationPrompt = userPrompt;
+        if (history && Array.isArray(history) && history.length > 0) {
+          const recentTurns = history.slice(-6).map((h) =>
+            `${h.role === 'user' ? 'Student' : 'Assistant'}: ${h.text}`
+          ).join('\n\n');
+          conversationPrompt = `Previous Conversation Context:\n${recentTurns}\n\nCurrent Student Inquiry:\n${userPrompt}`;
+        }
+
         const response = await ai.models.generateContent({
           model: 'gemini-3.8-flash',
           contents: attachmentName
-            ? `[Uploaded Document: ${attachmentName}]\nUser Inquiry: ${userPrompt}`
-            : userPrompt,
+            ? `[Uploaded Document: ${attachmentName}]\n${conversationPrompt}`
+            : conversationPrompt,
           config: {
             systemInstruction:
               CAMPUS_AI_MASTER_PROMPT +
@@ -2053,7 +2814,7 @@ app.post('/api/ai/chat', async (req, res) => {
 
     return res.json({
       ...baseRAG,
-      providerUsed: `Zanzee Foundry RAG (${AZURE_CONFIG.textDeployment}) · Master Prompt v5.0`,
+      providerUsed: `Kristu Jayanti Foundry RAG (${AZURE_CONFIG.textDeployment}) · Master Prompt v5.0`,
     });
   } catch {
     return res.status(500).json({
@@ -2084,6 +2845,47 @@ app.post('/api/ai/tutor', async (req, res) => {
     };
 
     const selectedPrompt = actionPrompts[action || 'custom'] || actionPrompts.custom;
+
+    // 0) Groq first (Parth's Groq key)
+    try {
+      const groqFast = await callGroq({
+        system:
+          CAMPUS_AI_MASTER_PROMPT +
+          '\nRule: Never output raw markdown headings like ## Concept or ask questions like "which part are you working on". Always explain the core points clearly, step-by-step, with numbers (Point 1, Point 2, Point 3, etc.) so that all students can understand properly.',
+        user: selectedPrompt,
+      });
+      if (groqFast) {
+        return res.json({
+          reply: groqFast.text,
+          topic: currentTopic,
+          understandingDelta: action === 'quiz' ? 6 : 4,
+          source: 'Groq · MCA Semester-I Assessment Pack',
+        });
+      }
+    } catch {
+      // Fall through to Grok, then Gemini, then structured fallback below
+    }
+
+    // 1) Grok via OpenRouter first (Parth's key)
+    try {
+      const grok = await callGrok({
+        system:
+          CAMPUS_AI_MASTER_PROMPT +
+          '\nRule: Never output raw markdown headings like ## Concept or ask questions like "which part are you working on". Always explain the core points clearly, step-by-step, with numbers (Point 1, Point 2, Point 3, etc.) so that all students can understand properly.',
+        user: selectedPrompt,
+      });
+      if (grok) {
+        return res.json({
+          reply: grok.text,
+          topic: currentTopic,
+          understandingDelta: action === 'quiz' ? 6 : 4,
+          source: 'Grok via OpenRouter · MCA Semester-I Assessment Pack',
+        });
+      }
+    } catch {
+      // Fall through to Gemini, then the structured fallback below
+    }
+
     const ai = getGeminiClient();
 
     if (ai) {
@@ -2223,14 +3025,14 @@ app.post('/api/ai/analyze-doc', async (req, res) => {
   const { fileName, documentType } = req.body as { fileName?: string; documentType?: string };
   return res.json({
     status: 'verified',
-    fileName: fileName || 'Zanzee_Enrollment_Verification_Fall2026.pdf',
+    fileName: fileName || 'KJIT_Enrollment_Verification_Fall2026.pdf',
     documentType: documentType || 'Proof of Enrollment (Form FA-104)',
     extractedFields: {
-      studentName: 'Alex Morgan',
-      studentId: 'ZC-88412',
-      enrollmentStatus: 'Full-Time Undergraduate (16.0 Credits)',
+      studentName: 'Parth Pimplapure',
+      studentId: '26MCAD30',
+      enrollmentStatus: 'Full-Time MCA · Division D (16.0 Credits)',
       term: 'Fall 2026',
-      registrarSeal: 'Verified Digital Signature — Zanzee College Registrar',
+      registrarSeal: 'Verified Digital Signature — Kristu Jayanti Institute of Technology Registrar',
       missingInformation: 'None — All required fields present and verified',
       confidenceScore: '99.4%',
     },
@@ -2243,14 +3045,53 @@ app.post('/api/ai/course-recommendations', async (req, res) => {
   try {
     const { studentProfile, customInterests, categoryFilter } = req.body;
     const interests = customInterests || (studentProfile?.interests) || ['Data Structures', 'Artificial Intelligence', 'Ethics'];
+
+    // Shared catalog + JSON contract (same data as the Gemini prompt below).
+    const recUser = `Recommend 3 to 5 Spring 2027 courses for MCA Division-D student Parth Pimplapure (26MCAD30, GPA ${studentProfile?.gpa || '3.82'}, completed ${studentProfile?.creditsCompleted || 72}/120 credits). Interests: ${interests.join(', ')}. Filter: ${categoryFilter || 'All'}. Catalog: CS 310 Algorithms & Complexity (4cr Major Core, prereqs CS 201 MATH 210); CS 340 Operating Systems (4cr Major Core, prereq CS 201); CS 370 AI & Neural Architectures (4cr Technical Elective); PHIL 220 Ethics in Information Age (4cr GenEd); ART 140 Visual Journalism (4cr GenEd); STAT 205 Applied Probability (4cr Major Core); ENV 215 Computational Ecology (4cr GenEd); CS 420 Distributed Cloud Systems (4cr Technical Elective). Return strictly a JSON array inside a \`\`\`json block with code/title/credits/category/explanation/matchScore(80-99)/prerequisitesMet/targetSemester Spring 2027.`;
+    const parseRecJson = (text: string) => {
+      const m = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/(\[[\s\S]*\])/);
+      if (!m) return null;
+      try {
+        return JSON.parse(m[1]);
+      } catch {
+        return null;
+      }
+    };
+
+    // 0) Groq (Parth's key) first
+    try {
+      const groqRec = await callGroq({ system: CAMPUS_AI_MASTER_PROMPT, user: recUser, maxTokens: 2000 });
+      if (groqRec) {
+        const parsed = parseRecJson(groqRec.text);
+        if (parsed) {
+          return res.json({ recommendations: parsed, engine: `Groq ${groqRec.model} Course Recommendation Engine` });
+        }
+      }
+    } catch {
+      // Fall through to Grok, then Gemini, then static defaults below
+    }
+
+    // 1) Grok via OpenRouter (Parth's key)
+    try {
+      const grokRec = await callGrok({ system: CAMPUS_AI_MASTER_PROMPT, user: recUser, maxTokens: 2000 });
+      if (grokRec) {
+        const parsed = parseRecJson(grokRec.text);
+        if (parsed) {
+          return res.json({ recommendations: parsed, engine: `Grok ${grokRec.model} Course Recommendation Engine` });
+        }
+      }
+    } catch {
+      // Fall through to Gemini, then static defaults below
+    }
+
     const ai = getGeminiClient();
 
     if (ai) {
       try {
-        const prompt = `You are the CampusAI Academic Advising & Degree Audit Engine for Zanzee College.
+        const prompt = `You are the CampusAI Academic Advising & Degree Audit Engine for Kristu Jayanti Institute of Technology.
 Analyze this student's profile:
-- Major: ${studentProfile?.major || 'B.Sc. Computer Science'}
-- Year: ${studentProfile?.year || 'Junior (Year 3)'}
+- Major: ${studentProfile?.major || 'Computer Applications (MCA · Division D, 26MCAD30)'}
+- Year: ${studentProfile?.year || 'MCA Year 1 · Division D'}
 - Cumulative GPA: ${studentProfile?.gpa || '3.82'}
 - Completed Credits: ${studentProfile?.creditsCompleted || 72} / ${studentProfile?.creditsTotal || 120} (60% Progress)
 - Current Courses: CS 201 (A-), MATH 210 (A), BIO 101 (A), ENG 105 (A-)
@@ -2386,7 +3227,7 @@ Return strictly a JSON array inside a \`\`\`json block.`;
           tags: ['Major Core', 'Systems & Architecture'],
         },
       ],
-      engine: 'Zanzee Degree Audit Rules Engine v2026.4',
+      engine: 'KJIT Degree Audit Rules Engine v2026.4',
     });
   } catch (err) {
     console.error('Course recommendation error:', err);
@@ -2412,7 +3253,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Zanzee College CampusAI Server running on http://0.0.0.0:${PORT}`);
+    console.log(`Kristu Jayanti Institute of Technology CampusAI Server running on http://0.0.0.0:${PORT}`);
   });
 }
 

@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { Lock, ArrowRight, ShieldCheck, AlertCircle, Loader2, KeyRound } from 'lucide-react';
 import { RoleMode } from '../types';
 import { ASSETS } from '../data/zanzeeData';
+import { KJCLogo } from './KJCLogo';
 
 interface AuthScreenProps {
   onAuthenticated: (role: RoleMode) => void;
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
-  const [email, setEmail] = useState('amorgan@zanzee.edu');
+  const [email, setEmail] = useState('ppimplapure@kjit.edu.in');
   const [password, setPassword] = useState('••••••••••••');
   const [rememberMe, setRememberMe] = useState(true);
+  const [portalMode, setPortalMode] = useState<'student' | 'admin'>('student');
   const [selectedRole, setSelectedRole] = useState<RoleMode>('student');
   const [authState, setAuthState] = useState<
     'idle' | 'loading' | 'invalid_password' | 'account_locked' | 'sso_redirect' | 'forgot_sent' | 'register_mode'
@@ -38,13 +40,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
   return (
     <div className="min-h-screen bg-[#FBF9F5] text-[#1C1917] flex flex-col justify-between">
       {/* Editorial Broadsheet Masthead */}
-      <header className="border-b border-stone-300 bg-white px-6 py-4">
+      <header className="border-b border-stone-300 bg-white px-6 py-3.5">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <span className="font-serif text-xl font-bold tracking-tight text-stone-900">
-            CampusAI · Zanzee College
-          </span>
-          <div className="text-xs font-mono text-stone-600 tabular-nums">
-            VOL. CXIV · FALL SEMESTER 2026 · UNIVERSITY IDENTITY GATEWAY
+          <KJCLogo variant="horizontal" size="sm" />
+          <div className="text-xs font-mono text-stone-600 tabular-nums text-right">
+            <div>THE KRISTU CHRONICLE · VOL. CXIV</div>
+            <div className="text-[10px] text-stone-500">UNIVERSITY IDENTITY GATEWAY</div>
           </div>
         </div>
       </header>
@@ -53,8 +54,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
       <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
         {/* Left Column: Editorial Lead Feature */}
         <div className="lg:col-span-7 space-y-6 border-b lg:border-b-0 lg:border-r border-stone-300 pb-8 lg:pb-0 lg:pr-10">
-          <div className="text-xs font-mono uppercase tracking-widest text-[#1E3A8A]">
-            THE ZANZEE COLLEGE CHRONICLE · ENTERPRISE AI EDITION
+          <div className="text-xs font-mono uppercase tracking-widest text-[#1E3A8A] font-bold">
+            THE KRISTU CHRONICLE · ENTERPRISE AI EDITION
           </div>
           <h1 className="font-serif text-4xl lg:text-5xl font-semibold text-stone-900 leading-tight">
             Your entire university, powered by verified intelligence.
@@ -63,25 +64,25 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
             <span className="float-left font-serif text-5xl font-bold text-stone-900 mr-3 mt-1 leading-none">
               W
             </span>
-            elcome to Zanzee College’s unified student portal, learning management system, Socratic AI tutor, and administrative dispatch. Grounded directly in the University Registrar, Course LMS, Financial Aid Bursar, and Grand Library Archives.
+            elcome to Kristu Jayanti Institute of Technology’s unified student portal, learning management system, Socratic AI tutor, and administrative dispatch. Grounded directly in the University Registrar, Course LMS, Financial Aid Bursar, and Central Library Archives.
           </p>
 
           <div className="relative overflow-hidden border border-stone-300 bg-stone-100">
             <img
               src={ASSETS.campusQuad}
-              alt="Zanzee College Historic Quadrangle in Autumn Morning Light"
+              alt="Kristu Jayanti Institute of Technology Campus in Autumn Morning Light"
               referrerPolicy="no-referrer"
               className="w-full h-64 object-cover"
             />
             <div className="p-3 bg-white border-t border-stone-200 text-xs font-serif italic text-stone-600">
-              Fig. 1 — Morning light across the Zanzee College Quadrangle and Turing Hall. All academic services synchronized via CampusAI RAG Index.
+              Fig. 1 — Morning light across the Kristu Jayanti Institute of Technology Campus and Turing Hall. All academic services synchronized via CampusAI RAG Index.
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4 pt-2 border-t border-stone-300 text-xs text-stone-600">
             <div>
               <div className="font-mono font-semibold text-stone-900 text-sm tabular-nums">100% Grounded</div>
-              <div>Official Zanzee Syllabi & Handbook</div>
+              <div>Official KJIT Syllabi & Handbook</div>
             </div>
             <div>
               <div className="font-mono font-semibold text-stone-900 text-sm tabular-nums">Socratic Tutor</div>
@@ -97,41 +98,99 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
         {/* Right Column: Login & Realistic State Simulator */}
         <div className="lg:col-span-5 bg-white border border-stone-300 p-8 space-y-6">
           <div className="border-b border-stone-200 pb-4">
-            <div className="text-xs font-mono text-stone-500">ZANZEE CENTRAL AUTHENTICATION</div>
+            <div className="text-xs font-mono text-stone-500">KRISTU JAYANTI CENTRAL AUTHENTICATION</div>
             <h2 className="font-serif text-3xl font-semibold text-stone-900 mt-1">
               {authState === 'register_mode' ? 'Create university account' : 'Welcome back'}
             </h2>
             <p className="text-sm text-stone-600 mt-1">
-              Sign in with your Zanzee College credentials or institutional SSO.
+              Sign in with your Kristu Jayanti Institute of Technology credentials or institutional SSO.
             </p>
           </div>
 
-          {/* Role Selector for Demo Evaluation */}
+          {/* Portal Gateway Selector: Student Portal vs Admin Login */}
           <div>
             <label className="block text-xs font-mono text-stone-600 mb-2">
-              SELECT PORTAL EDITION
+              SELECT PORTAL GATEWAY
             </label>
-            <div className="grid grid-cols-3 gap-1 p-1 bg-stone-100 border border-stone-200">
-              {(['student', 'faculty', 'admin'] as RoleMode[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => {
-                    setSelectedRole(r);
-                    if (r === 'student') setEmail('amorgan@zanzee.edu');
-                    if (r === 'faculty') setEmail('sjohnson@zanzee.edu');
-                    if (r === 'admin') setEmail('provost.office@zanzee.edu');
-                  }}
-                  className={`py-2 px-3 text-xs font-medium capitalize transition-colors whitespace-nowrap ${
-                    selectedRole === r
-                      ? 'bg-[#1E3A8A] text-white'
-                      : 'text-stone-700 hover:text-stone-900'
-                  }`}
-                >
-                  {r === 'admin' ? 'Administration' : r}
-                </button>
-              ))}
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-stone-100 border border-stone-200">
+              <button
+                type="button"
+                onClick={() => {
+                  setPortalMode('student');
+                  setSelectedRole('student');
+                  setEmail('ppimplapure@kjit.edu.in');
+                }}
+                className={`py-2 px-3 text-xs font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                  portalMode === 'student'
+                    ? 'bg-[#1E3A8A] text-white shadow-sm'
+                    : 'text-stone-700 hover:text-stone-900 bg-white'
+                }`}
+              >
+                Student Portal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPortalMode('admin');
+                  setSelectedRole('admin');
+                  setEmail('provost.office@kjit.edu.in');
+                }}
+                className={`py-2 px-3 text-xs font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                  portalMode === 'admin'
+                    ? 'bg-[#141210] text-white shadow-sm'
+                    : 'text-stone-700 hover:text-stone-900 bg-white'
+                }`}
+              >
+                Admin Login
+              </button>
             </div>
+
+            {/* When Admin Login is selected, provide the Faculty Edition option right here! */}
+            {portalMode === 'admin' && (
+              <div className="mt-2.5 p-3 bg-[#FAF8F5] border border-stone-300 space-y-2 animate-fadeIn">
+                <div className="text-[10px] font-mono text-stone-600 font-bold uppercase tracking-wider flex items-center justify-between">
+                  <span>Admin Edition:</span>
+                  <span className="text-[#1E3A8A] font-semibold">
+                    {selectedRole === 'faculty' ? 'Faculty Edition Active' : 'Executive Console Active'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole('admin');
+                      setEmail('provost.office@kjit.edu.in');
+                    }}
+                    className={`py-1.5 px-2 text-[11px] font-mono font-bold uppercase transition-colors cursor-pointer border ${
+                      selectedRole === 'admin'
+                        ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                        : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'
+                    }`}
+                  >
+                    Executive Admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole('faculty');
+                      setEmail('sjohnson@kjit.edu.in');
+                    }}
+                    className={`py-1.5 px-2 text-[11px] font-mono font-bold uppercase transition-colors cursor-pointer border ${
+                      selectedRole === 'faculty'
+                        ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                        : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'
+                    }`}
+                  >
+                    👨‍🏫 Faculty Edition
+                  </button>
+                </div>
+                <div className="text-[10px] text-stone-500 italic">
+                  {selectedRole === 'faculty'
+                    ? 'Entering Faculty Edition & Teacher Study Console with faculty governance credentials.'
+                    : 'Entering Executive Governance, Observability & Chronicle Administration.'}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Interactive Authentication State Banners */}
@@ -140,7 +199,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
               <AlertCircle className="w-4 h-4 text-red-700 shrink-0 mt-0.5" />
               <div>
                 <div className="font-semibold">Incorrect password</div>
-                <div>The password entered does not match Zanzee Directory record #ZC-88412. 2 attempts remaining before temporary lock.</div>
+                <div>The password entered does not match Kristu Jayanti Directory record #26MCAD30 (Parth Pimplapure, MCA · Division D). 2 attempts remaining before temporary lock.</div>
               </div>
             </div>
           )}
@@ -150,7 +209,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
               <Lock className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" />
               <div>
                 <div className="font-semibold">Account temporarily locked</div>
-                <div>Multiple failed sign-in attempts detected. Please verify via Zanzee Okta MFA or contact the IT Help Desk (Ext. 4357).</div>
+                <div>Multiple failed sign-in attempts detected. Please verify via Kristu Jayanti Okta MFA or contact the IT Help Desk (Ext. 4357).</div>
               </div>
             </div>
           )}
@@ -159,7 +218,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
             <div className="p-3 bg-blue-50 border border-blue-200 text-xs text-[#1E3A8A] flex items-center gap-2.5" role="status">
               <Loader2 className="w-4 h-4 animate-spin shrink-0" />
               <div>
-                <div className="font-semibold">Redirecting to Zanzee College SAML 2.0 SSO...</div>
+                <div className="font-semibold">Redirecting to Kristu Jayanti Institute of Technology SAML 2.0 SSO...</div>
                 <div>Verifying institutional certificate & hardware token...</div>
               </div>
             </div>
@@ -170,7 +229,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
               <KeyRound className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
               <div>
                 <div className="font-semibold">Password reset dispatch sent</div>
-                <div>Check {email} for a one-time Zanzee Identity verification link.</div>
+                <div>Check {email} for a one-time Kristu Jayanti Identity verification link.</div>
               </div>
             </div>
           )}
@@ -186,7 +245,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3.5 py-2.5 text-sm bg-[#FBF9F5] border border-stone-300 focus:border-[#1E3A8A] focus:outline-none"
-                placeholder="amorgan@zanzee.edu"
+                placeholder="ppimplapure@kjit.edu.in"
                 required
               />
             </div>
@@ -243,7 +302,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
               {authState === 'loading' ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Authenticating with Zanzee Directory...</span>
+                  <span>Authenticating with Kristu Jayanti Directory...</span>
                 </>
               ) : (
                 <>
@@ -303,7 +362,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
 
       <footer className="border-t border-stone-300 bg-white px-6 py-4 text-xs text-stone-600">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div>© 2026 Zanzee College & Northstar University Consortium. All rights reserved.</div>
+          <div>© 2026 Kristu Jayanti Institute of Technology. All rights reserved.</div>
           <div>Protected by SAML 2.0 · FERPA Compliant · WCAG 2.2 AA Accessible</div>
         </div>
       </footer>

@@ -1,6 +1,6 @@
 {
-  "name": "CampusAI — Zanzee College Chronicle & AI Platform",
-  "description": "An AI-powered university campus assistant, learning management system, and interactive editorial student portal for Zanzee College.",
+  "name": "CampusAI — The Kristu Chronicle & AI Platform",
+  "description": "An AI-powered university campus assistant, learning management system, and interactive editorial student portal for Kristu Jayanti Institute of Technology (Kristu Jayanti College).",
   "requestFramePermissions": [
     "microphone",
     "camera"

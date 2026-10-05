@@ -17,10 +17,13 @@ import {
   CAMPUS_SERVICES,
   LIBRARY_RESOURCES,
   CALENDAR_EVENTS,
-  ASSETS,
 } from './data/zanzeeData';
+import { searchMcaTopics } from './data/mcaSyllabus';
 import { AuthScreen } from './components/AuthScreen';
 import { AICampusAssistant } from './components/AICampusAssistant';
+import { AdmissionsView } from './components/AdmissionsView';
+import { FacultyDirectoryView } from './components/FacultyDirectoryView';
+import { KJCLogo } from './components/KJCLogo';
 import {
   StudentDashboard,
   CoursesView,
@@ -59,6 +62,20 @@ export default function App() {
   };
 
   const handleNavigate = (view: ViewId, payload?: string) => {
+    if (view === 'faculty-dashboard') {
+      setRole('faculty');
+      setCurrentView('faculty-dashboard');
+      triggerToast('Opened Faculty Edition Console');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (view === 'admin-dashboard' && role === 'faculty') {
+      setRole('admin');
+      setCurrentView('admin-dashboard');
+      triggerToast('Switched to Administration Console');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     if (view === 'course-detail') {
       setSelectedCoursePayload(payload || 'cs-201');
       setCurrentView('courses');
@@ -92,15 +109,17 @@ export default function App() {
           if (selectedRole === 'student') setCurrentView('ai-assistant');
           if (selectedRole === 'faculty') setCurrentView('faculty-dashboard');
           if (selectedRole === 'admin') setCurrentView('admin-dashboard');
-          triggerToast('Signed in via Zanzee College Identity');
+          triggerToast('Signed in via Kristu Jayanti Institute of Technology Identity');
         }}
       />
     );
   }
 
   const studentSidebarLinks: Array<{ id: ViewId; label: string; highlight?: boolean }> = [
-    { id: 'ai-assistant', label: '⚡ Campus Assistant (OS)', highlight: true },
-    { id: 'dashboard', label: '📰 Chronicle Dashboard' },
+    { id: 'ai-assistant', label: '💬 AI Chatbot' },
+    { id: 'dashboard', label: '📰 The Kristu Chronicle' },
+    { id: 'admissions', label: '🎓 Admissions & Fees' },
+    { id: 'faculty-directory', label: '👨‍🏫 Faculty & Mentors' },
     { id: 'courses', label: '📚 My Courses' },
     { id: 'assignments', label: '📝 Assignments' },
     { id: 'calendar', label: '📅 Schedule & Timetable' },
@@ -135,30 +154,32 @@ export default function App() {
   const matchedLibrary = q
     ? LIBRARY_RESOURCES.filter((l) => l.title.toLowerCase().includes(q))
     : LIBRARY_RESOURCES.slice(0, 2);
+  const matchedSyllabus = q ? searchMcaTopics(globalSearchQuery, 4) : [];
 
   return (
     <div className="min-h-screen bg-[#EAE2D3] text-[#141210] flex flex-col">
       {/* Strict 3-Zone Top Bar Contract */}
       <header className="sticky top-0 z-30 bg-[#F5F0E6] border-b-2 border-[#141210] px-6 py-3 flex items-center justify-between shadow-[0px_2px_0px_#141210]">
-        {/* Zone 1: Wordmark & Tagline */}
+        {/* Zone 1: Wordmark & Tagline with Official KJC Emblem */}
         <div className="flex items-center gap-3">
           <a
             href="#top"
             onClick={(e) => {
               e.preventDefault();
-              handleNavigate('ai-assistant');
+              handleNavigate('dashboard');
             }}
-            className="flex items-center gap-2 group cursor-pointer"
+            className="flex items-center gap-2.5 group cursor-pointer"
           >
-            <div className="w-8 h-8 bg-[#141210] text-[#F5F0E6] font-serif font-bold text-base flex items-center justify-center border border-[#141210] shrink-0">
-              CA
-            </div>
+            <KJCLogo variant="emblem" size="sm" />
             <div>
-              <div className="font-serif text-lg font-bold tracking-tight text-stone-900 group-hover:text-[#1E3A8A] transition-colors leading-none">
-                Campus Assistant
+              <div className="font-serif text-lg font-bold tracking-tight text-stone-900 group-hover:text-[#1E3A8A] transition-colors leading-none flex items-center gap-1.5">
+                <span>The Kristu Chronicle</span>
+                <span className="text-[9px] bg-[#1E3A8A] text-white px-1.5 py-0.5 font-mono uppercase font-bold">
+                  AI OS
+                </span>
               </div>
               <div className="text-[10px] text-stone-600 font-mono tracking-tight hidden sm:block mt-0.5">
-                "Your entire university, in one conversation."
+                Kristu Jayanti College · Autonomous Bengaluru
               </div>
             </div>
           </a>
@@ -178,7 +199,7 @@ export default function App() {
                 : ''
             }`}
           >
-            <span>💬 Campus Assistant</span>
+            <span>💬 AI Chatbot</span>
           </button>
           <button
             type="button"
@@ -192,7 +213,31 @@ export default function App() {
                 : ''
             }`}
           >
-            Chronicle Dashboard
+            The Kristu Chronicle
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRole('student');
+              handleNavigate('admissions');
+            }}
+            className={`hover:text-stone-950 transition-colors cursor-pointer whitespace-nowrap ${
+              currentView === 'admissions' ? 'text-stone-900 underline underline-offset-4 font-bold' : ''
+            }`}
+          >
+            Admissions & Fees
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRole('student');
+              handleNavigate('faculty-directory');
+            }}
+            className={`hover:text-stone-950 transition-colors cursor-pointer whitespace-nowrap ${
+              currentView === 'faculty-directory' ? 'text-stone-900 underline underline-offset-4 font-bold' : ''
+            }`}
+          >
+            Faculty & Mentors
           </button>
           <button
             type="button"
@@ -218,24 +263,18 @@ export default function App() {
           >
             Schedule
           </button>
-          <button
-            type="button"
-            onClick={() => handleRoleSwitch('faculty')}
-            className={`hover:text-stone-950 transition-colors cursor-pointer whitespace-nowrap ${
-              role === 'faculty' ? 'text-stone-900 underline underline-offset-4 font-bold' : ''
-            }`}
-          >
-            Faculty Edition
-          </button>
-          <button
-            type="button"
-            onClick={() => handleRoleSwitch('admin')}
-            className={`hover:text-stone-950 transition-colors cursor-pointer whitespace-nowrap ${
-              role === 'admin' ? 'text-stone-900 underline underline-offset-4 font-bold' : ''
-            }`}
-          >
-            Administration
-          </button>
+          {/* Faculty Edition is only accessible via Administration / Faculty login, NOT student login */}
+          {(role === 'admin' || role === 'faculty') && (
+            <button
+              type="button"
+              onClick={() => handleRoleSwitch('faculty')}
+              className={`hover:text-stone-950 transition-colors cursor-pointer whitespace-nowrap ${
+                role === 'faculty' ? 'text-[#1E3A8A] underline underline-offset-4 font-bold' : ''
+              }`}
+            >
+              👨‍🏫 Faculty Edition
+            </button>
+          )}
         </nav>
 
         {/* Zone 3: 2 Primary Actions (Global Search + Ask AI / Sign Out) */}
@@ -265,7 +304,7 @@ export default function App() {
           <div className="space-y-5">
             <div className="border-b border-stone-200 pb-3">
               <div className="text-[11px] font-mono text-stone-500">
-                ZANZEE COLLEGE GAZETTE
+                KRISTU JAYANTI INSTITUTE OF TECHNOLOGY GAZETTE
               </div>
               <div className="text-xs font-semibold text-stone-900 mt-0.5">
                 {role === 'student'
@@ -296,8 +335,13 @@ export default function App() {
             ) : role === 'faculty' ? (
               <nav className="space-y-1" aria-label="Faculty Navigation">
                 {[
-                  { id: 'faculty-dashboard', label: 'Faculty Dashboard' },
-                  { id: 'ai-assistant', label: 'Faculty AI Assistant' },
+                  { id: 'faculty-dashboard', label: '👨‍🏫 Teacher & Study Console' },
+                  { id: 'admin-dashboard', label: '🛡️ Administration Console' },
+                  { id: 'admin-chronicle', label: '📰 Chronicle Editor' },
+                  { id: 'dashboard', label: '📰 The Kristu Chronicle' },
+                  { id: 'faculty-directory', label: '👥 Faculty Directory' },
+                  { id: 'courses', label: '📖 Course LMS' },
+                  { id: 'ai-assistant', label: '💬 AI Chatbot' },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -317,6 +361,8 @@ export default function App() {
               <nav className="space-y-1" aria-label="Admin Navigation">
                 {[
                   { id: 'admin-dashboard', label: 'Admin Dashboard' },
+                  { id: 'admin-chronicle', label: '📰 The Kristu Chronicle Editor' },
+                  { id: 'faculty-dashboard', label: '👨‍🏫 Faculty Edition' },
                   { id: 'admin-ai', label: 'AI & RAG Knowledge' },
                   { id: 'admin-observability', label: 'Observability' },
                   { id: 'admin-compliance', label: 'Compliance (FERPA)' },
@@ -349,18 +395,18 @@ export default function App() {
               }}
               className="w-full flex items-center gap-3 text-left hover:bg-[#FBF9F5] p-1.5 transition-colors cursor-pointer"
             >
-              <img
-                src={ASSETS.avatarAlex}
-                alt={STUDENT_PERSONA.name}
-                referrerPolicy="no-referrer"
-                className="w-9 h-9 object-cover border border-[#141210] newspaper-photo shrink-0"
-              />
+              <div
+                aria-label={STUDENT_PERSONA.name}
+                className="w-9 h-9 flex items-center justify-center bg-[#1E3A8A] text-white text-xs font-bold border border-[#141210] shrink-0"
+              >
+                PP
+              </div>
               <div className="min-w-0">
                 <div className="text-xs font-semibold text-stone-900 truncate">
-                  {STUDENT_PERSONA.name}
+                  Parth Pimplapure
                 </div>
                 <div className="text-[11px] text-stone-600 truncate">
-                  {STUDENT_PERSONA.program}
+                  MCA · Division D · 26MCAD30
                 </div>
               </div>
             </button>
@@ -391,13 +437,13 @@ export default function App() {
 
         {/* Main Content Area */}
         <main className="flex-1 p-6 lg:p-8 pb-24 lg:pb-12 min-w-0">
-          {role === 'faculty' && currentView !== 'ai-assistant' ? (
+          {role === 'faculty' && currentView === 'faculty-dashboard' ? (
             <FacultyPortalView
               currentView={currentView}
               onNavigate={handleNavigate}
               onShowToast={triggerToast}
             />
-          ) : role === 'admin' && currentView !== 'ai-assistant' ? (
+          ) : role === 'admin' && currentView.startsWith('admin') ? (
             <AdminPortalView
               currentView={currentView}
               onNavigate={handleNavigate}
@@ -417,6 +463,20 @@ export default function App() {
                   initialPrompt={pendingAIPrompt}
                   onClearInitialPrompt={() => setPendingAIPrompt(undefined)}
                   onNavigate={handleNavigate}
+                  onShowToast={triggerToast}
+                />
+              )}
+              {currentView === 'admissions' && (
+                <AdmissionsView
+                  onNavigate={handleNavigate}
+                  onAskAI={handleAskAI}
+                  onShowToast={triggerToast}
+                />
+              )}
+              {currentView === 'faculty-directory' && (
+                <FacultyDirectoryView
+                  onNavigate={handleNavigate}
+                  onAskAI={handleAskAI}
                   onShowToast={triggerToast}
                 />
               )}
@@ -560,7 +620,7 @@ export default function App() {
           <div className="bg-white border border-stone-300 w-full max-w-2xl p-6 space-y-5 shadow-lg">
             <div className="flex items-center justify-between border-b border-stone-200 pb-3">
               <div className="text-xs font-mono text-[#1E3A8A]">
-                GLOBAL ZANZEE UNIVERSITY SEARCH
+                GLOBAL KRISTU JAYANTI SEARCH
               </div>
               <button
                 type="button"
@@ -648,6 +708,31 @@ export default function App() {
                   ))}
                 </div>
               </div>
+
+              {matchedSyllabus.length > 0 && (
+                <div>
+                  <div className="font-mono text-stone-500 mb-1.5">MCA SEM-I SYLLABUS · ASSESSMENT TOPICS</div>
+                  <div className="divide-y divide-stone-200 border border-stone-200">
+                    {matchedSyllabus.map((t, idx) => (
+                      <button
+                        key={`${t.subjectId}-${t.unit}-${idx}`}
+                        type="button"
+                        onClick={() => {
+                          const qText = `Teach me ${t.topic} (${t.subjectName}, ${t.unit})`;
+                          setSearchOpen(false);
+                          handleAskAI(qText);
+                        }}
+                        className="w-full text-left p-2.5 hover:bg-[#FBF9F5] flex justify-between gap-3"
+                      >
+                        <span className="font-semibold text-stone-900 truncate pr-4">{t.topic}</span>
+                        <span className="font-mono text-stone-500 shrink-0">
+                          {t.shortName} · {t.unit}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {globalSearchQuery.trim() && (
