@@ -58,7 +58,7 @@ export const FinancialAidView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
       <div className="border-b border-stone-300 pb-4 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="text-xs font-mono text-stone-500">OFFICE OF FINANCIAL AID, SCHOLARSHIPS & BURSAR</div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">Financial Aid & Billing</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">Financial Aid & Billing</h1>
         </div>
         <button
           type="button"
@@ -72,7 +72,7 @@ export const FinancialAidView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left 7 Cols: 2026-27 Financial Aid Status & Content Understanding Upload */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white border border-stone-300 p-6 space-y-4">
+          <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 pb-3">
               <div>
                 <div className="text-xs font-mono text-stone-500">ACADEMIC YEAR 2026–2027</div>
@@ -145,15 +145,15 @@ export const FinancialAidView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
             <div className="space-y-2 pt-2">
               <div className="text-xs font-mono text-stone-500">AWARDED SCHOLARSHIPS & GRANTS</div>
               <div className="divide-y divide-stone-200 border-t border-b border-stone-200 text-xs tabular-nums">
-                <div className="py-2.5 flex justify-between">
+                <div className="py-2.5 flex flex-wrap justify-between gap-2">
                   <span className="font-medium text-stone-900">Kristu Jayanti Presidential Merit Scholarship</span>
                   <span className="font-mono font-semibold text-stone-900">$14,500.00 / yr</span>
                 </div>
-                <div className="py-2.5 flex justify-between">
+                <div className="py-2.5 flex flex-wrap justify-between gap-2">
                   <span className="font-medium text-stone-900">Northstar STEM Innovation Grant</span>
                   <span className="font-mono font-semibold text-stone-900">$7,900.00 / yr</span>
                 </div>
-                <div className="py-2.5 flex justify-between bg-[#FBF9F5] px-2">
+                <div className="py-2.5 flex flex-wrap justify-between gap-2 bg-[#FBF9F5] px-2">
                   <span className="font-semibold text-stone-900">Total 2026–27 Aid Package</span>
                   <span className="font-mono font-bold text-[#1E3A8A]">$22,400.00</span>
                 </div>
@@ -164,7 +164,7 @@ export const FinancialAidView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
 
         {/* Right 5 Cols: Student Billing & Payments */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white border border-stone-300 p-6 space-y-4">
+          <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
             <div className="border-b border-stone-200 pb-3">
               <div className="text-xs font-mono text-stone-500">STUDENT BURSAR ACCOUNT</div>
               <h2 className="font-serif text-xl font-bold text-stone-900">Tuition Balance & Invoices</h2>
@@ -196,14 +196,14 @@ export const FinancialAidView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
             <div className="space-y-2">
               <div className="text-xs font-mono text-stone-500">RECENT INVOICES & PAYMENT HISTORY</div>
               <div className="divide-y divide-stone-200 text-xs tabular-nums">
-                <div className="py-2.5 flex justify-between">
+                <div className="py-2.5 flex flex-wrap justify-between gap-2">
                   <div>
                     <div className="font-medium text-stone-900">INV-2026-FALL · Fall Tuition & Lab Fees</div>
                     <div className="text-stone-500">Sep 1, 2026 · Scholarship Applied (-$11,200)</div>
                   </div>
                   <span className="font-mono text-stone-900">$1,850.00</span>
                 </div>
-                <div className="py-2.5 flex justify-between">
+                <div className="py-2.5 flex flex-wrap justify-between gap-2">
                   <div>
                     <div className="font-medium text-stone-900">INV-2026-SPR · Spring 2026 Settlement</div>
                     <div className="text-stone-500">Jan 15, 2026 · ACH Transfer</div>
@@ -243,7 +243,7 @@ export const CampusServicesView: React.FC<SharedNavProps> = ({ onAskAI, onShowTo
     <div className="space-y-6">
       <div className="border-b border-stone-300 pb-4">
         <div className="text-xs font-mono text-stone-500">KRISTU JAYANTI INSTITUTE OF TECHNOLOGY DIRECTORY</div>
-        <h1 className="font-serif text-3xl font-bold text-stone-900">Campus Services</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">Campus Services</h1>
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -267,7 +267,7 @@ export const CampusServicesView: React.FC<SharedNavProps> = ({ onAskAI, onShowTo
         {filtered.map((srv) => (
           <div
             key={srv.id}
-            className="bg-white border border-stone-300 p-6 flex flex-col justify-between space-y-4"
+            className="bg-white border border-stone-300 p-4 sm:p-6 flex flex-col justify-between space-y-4"
           >
             <div className="space-y-2">
               <div className="text-xs font-mono text-[#1E3A8A]">{srv.category.toUpperCase()}</div>
@@ -383,9 +383,9 @@ export const ITSupportView: React.FC<SharedNavProps> = ({ onShowToast }) => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-stone-300 p-6 space-y-4">
+      <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
         <div className="text-xs font-mono text-[#1E3A8A]">KRISTU JAYANTI ENTERPRISE IT HELP DESK</div>
-        <h1 className="font-serif text-3xl font-bold text-stone-900">How can we help?</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">How can we help?</h1>
 
         <form
           onSubmit={(e) => {
@@ -394,18 +394,18 @@ export const ITSupportView: React.FC<SharedNavProps> = ({ onShowToast }) => {
             setActiveIssue(issueQuery);
             setStep('suggest');
           }}
-          className="flex gap-2"
+          className="flex flex-col sm:flex-row gap-2"
         >
           <input
             type="text"
             value={issueQuery}
             onChange={(e) => setIssueQuery(e.target.value)}
             placeholder="Describe your technical problem…"
-            className="flex-1 px-4 py-2.5 text-sm bg-[#FBF9F5] border border-stone-300 focus:border-[#1E3A8A] focus:outline-none"
+            className="min-w-0 flex-1 px-4 py-2.5 text-sm bg-[#FBF9F5] border border-stone-300 focus:border-[#1E3A8A] focus:outline-none"
           />
           <button
             type="submit"
-            className="px-5 py-2.5 bg-[#1E3A8A] text-white text-xs font-medium cursor-pointer"
+            className="shrink-0 px-5 py-2.5 bg-[#1E3A8A] text-white text-xs font-medium cursor-pointer"
           >
             Diagnose Issue
           </button>
@@ -439,7 +439,7 @@ export const ITSupportView: React.FC<SharedNavProps> = ({ onShowToast }) => {
 
       {/* AI Troubleshooting Flow */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 bg-white border border-stone-300 p-6 space-y-4">
+        <div className="lg:col-span-8 bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-stone-200 pb-3">
             <div>
               <div className="text-xs font-mono text-stone-500">AI TROUBLESHOOTING WORKFLOW</div>
@@ -494,7 +494,7 @@ export const ITSupportView: React.FC<SharedNavProps> = ({ onShowToast }) => {
           </div>
         </div>
 
-        <div className="lg:col-span-4 bg-white border border-stone-300 p-6 space-y-3">
+        <div className="lg:col-span-4 bg-white border border-stone-300 p-4 sm:p-6 space-y-3">
           <h3 className="font-serif text-lg font-bold text-stone-900 border-b border-stone-200 pb-2">
             Active IT Tickets
           </h3>
@@ -532,11 +532,11 @@ export const LibraryView: React.FC<SharedNavProps> = ({ onAskAI, onShowToast }) 
   return (
     <div className="space-y-6">
       <div className="bg-white border border-stone-300 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-        <div className="lg:col-span-7 p-6 space-y-4">
+        <div className="lg:col-span-7 p-4 sm:p-6 space-y-4">
           <div className="text-xs font-mono text-[#1E3A8A]">
             KRISTU JAYANTI ARCHIVAL LIBRARY & SPECIAL COLLECTIONS
           </div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
             Digital Library & Citations
           </h1>
           <div className="relative">
@@ -573,7 +573,7 @@ export const LibraryView: React.FC<SharedNavProps> = ({ onAskAI, onShowToast }) 
             src={ASSETS.libraryRoom}
             alt="Kristu Jayanti Central Reading Room"
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover"
+            className="w-full h-48 lg:h-full lg:absolute lg:inset-0 object-cover"
           />
         </div>
       </div>
@@ -592,18 +592,18 @@ export const LibraryView: React.FC<SharedNavProps> = ({ onAskAI, onShowToast }) 
             if (!researchPrompt.trim()) return;
             onAskAI(`Help me research: ${researchPrompt} and provide APA/IEEE citations from Kristu Jayanti Library.`);
           }}
-          className="flex gap-2 w-full sm:w-auto"
+          className="flex flex-col min-[420px]:flex-row gap-2 w-full sm:w-auto"
         >
           <input
             type="text"
             value={researchPrompt}
             onChange={(e) => setResearchPrompt(e.target.value)}
             placeholder="Help me research…"
-            className="flex-1 sm:w-72 px-3.5 py-2 text-xs bg-[#FBF9F5] border border-stone-300"
+            className="min-w-0 flex-1 sm:w-72 px-3.5 py-2 text-xs bg-[#FBF9F5] border border-stone-300"
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-[#1E3A8A] text-white text-xs font-medium cursor-pointer whitespace-nowrap"
+            className="shrink-0 px-4 py-2 bg-[#1E3A8A] text-white text-xs font-medium cursor-pointer whitespace-nowrap"
           >
             Research with AI
           </button>
@@ -687,7 +687,7 @@ export const MessagesView: React.FC<SharedNavProps> = ({ onShowToast }) => {
   };
 
   return (
-    <div className="bg-white border border-stone-300 grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
+    <div className="bg-white border border-stone-300 grid grid-cols-1 lg:grid-cols-12 min-h-[500px] sm:min-h-[620px]">
       <div className="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-stone-300 bg-[#FBF9F5] p-4 space-y-3">
         <div className="border-b border-stone-300 pb-3">
           <div className="text-xs font-mono text-stone-500">COMMUNICATION CENTER</div>
@@ -715,7 +715,7 @@ export const MessagesView: React.FC<SharedNavProps> = ({ onShowToast }) => {
         </div>
       </div>
 
-      <div className="lg:col-span-8 flex flex-col justify-between p-6">
+      <div className="lg:col-span-8 flex flex-col justify-between p-4 sm:p-6">
         <div className="space-y-4">
           <div className="border-b border-stone-200 pb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -750,17 +750,17 @@ export const MessagesView: React.FC<SharedNavProps> = ({ onShowToast }) => {
           </div>
         </div>
 
-        <form onSubmit={handleSendMessage} className="pt-4 border-t border-stone-200 flex gap-2">
+        <form onSubmit={handleSendMessage} className="pt-4 border-t border-stone-200 flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder={`Write a message to ${activeThread.correspondent}…`}
-            className="flex-1 px-3.5 py-2.5 text-xs bg-[#FBF9F5] border border-stone-300"
+            className="min-w-0 flex-1 px-3.5 py-2.5 text-xs bg-[#FBF9F5] border border-stone-300"
           />
           <button
             type="submit"
-            className="px-5 py-2.5 bg-[#1E3A8A] text-white text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+            className="shrink-0 px-5 py-2.5 bg-[#1E3A8A] text-white text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <span>Send</span>
             <Send className="w-3.5 h-3.5" />
@@ -791,9 +791,9 @@ export const NotificationsAndSettingsView: React.FC<
         <div className="border-b border-stone-300 pb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="text-xs font-mono text-stone-500">CAMPUS DISPATCH ALERTS</div>
-            <h1 className="font-serif text-3xl font-bold text-stone-900">Notifications</h1>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">Notifications</h1>
           </div>
-          <div className="flex gap-1 p-1 bg-stone-200/70 border border-stone-300">
+          <div className="flex gap-1 p-1 bg-stone-200/70 border border-stone-300 max-w-full overflow-x-auto">
             {(['All', 'Academic', 'Financial', 'Campus', 'System'] as const).map((c) => (
               <button
                 key={c}
@@ -840,13 +840,13 @@ export const NotificationsAndSettingsView: React.FC<
     <div className="space-y-6">
       <div className="border-b border-stone-300 pb-4">
         <div className="text-xs font-mono text-stone-500">STUDENT IDENTITY, PRIVACY & ACCESSIBILITY</div>
-        <h1 className="font-serif text-3xl font-bold text-stone-900">
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
           Profile, Security & Privacy Center
         </h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-5 bg-white border border-stone-300 p-6 space-y-4">
+        <div className="lg:col-span-5 bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
           <div className="flex items-center gap-4">
             <div
               aria-label="Parth Pimplapure — 26MCAD30 · MCA Division D"
@@ -867,7 +867,7 @@ export const NotificationsAndSettingsView: React.FC<
           </div>
         </div>
 
-        <div className="lg:col-span-7 bg-white border border-stone-300 p-6 space-y-4">
+        <div className="lg:col-span-7 bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
           <h3 className="font-serif text-xl font-bold text-stone-900 border-b border-stone-200 pb-2">
             FERPA Data Controls & WCAG 2.2 AA Accessibility
           </h3>

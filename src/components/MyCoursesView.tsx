@@ -274,7 +274,7 @@ export const CoursesView: React.FC<MyCoursesNavProps & { selectedCourseId?: stri
 
         <div className="bg-white border border-stone-300 overflow-hidden">
           <div className="relative">
-            <PgCoverPhoto card={activeCourse} alt={`${activeCourse.title} banner`} className="w-full h-52" />
+            <PgCoverPhoto card={activeCourse} alt={`${activeCourse.title} banner`} className="w-full h-40 sm:h-52" />
             <span
               className="absolute top-4 left-4 text-xs font-mono font-bold text-white px-2.5 py-1"
               style={{ backgroundColor: activeCourse.accent }}
@@ -282,12 +282,12 @@ export const CoursesView: React.FC<MyCoursesNavProps & { selectedCourseId?: stri
               {activeCourse.code} · {activeCourse.credits} CREDITS · {activeCourse.category.toUpperCase()}
             </span>
           </div>
-          <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             <div className="lg:col-span-8 space-y-2">
               <div className="text-xs font-mono" style={{ color: activeCourse.accent }}>
                 {activeCourse.code} · {activeCourse.department.toUpperCase()} · {program.name.toUpperCase()} · SEM {activeCourse.semester}
               </div>
-              <h1 className="font-serif text-3xl font-bold text-stone-900">{activeCourse.title}</h1>
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">{activeCourse.title}</h1>
               <div className="text-xs text-stone-600">
                 {activeCourse.coordinator} · {activeCourse.schedule} in {activeCourse.room}
               </div>
@@ -541,7 +541,7 @@ export const CoursesView: React.FC<MyCoursesNavProps & { selectedCourseId?: stri
         ) : activeTab === 'Grades' ? (
           <GradesView onNavigate={onNavigate} onAskAI={onAskAI} onShowToast={onShowToast} />
         ) : (
-          <div className="bg-white border border-stone-300 p-6 space-y-4">
+          <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
             <h3 className="font-serif text-xl font-bold text-stone-900">
               Course Seminar Discussions · {activeCourse.code}
             </h3>
@@ -581,7 +581,7 @@ export const CoursesView: React.FC<MyCoursesNavProps & { selectedCourseId?: stri
           <div className="text-xs font-mono text-stone-500">
             KRISTU JAYANTI INSTITUTE OF TECHNOLOGY · PG PROGRAMMES · {STUDENT_PERSONA.program.toUpperCase()}
           </div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">My Courses</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">My Courses</h1>
           <div className="text-xs text-stone-600 mt-1">
             {STUDENT_PERSONA.name} · {STUDENT_PERSONA.id} · MCA · M.Sc Data Science · M.Sc Cyber Security ·
             Semester {semester}
@@ -760,7 +760,7 @@ export const CoursesView: React.FC<MyCoursesNavProps & { selectedCourseId?: stri
       </div>
 
       {semester !== 1 ? (
-        <div className="bg-white border border-stone-300 p-8 text-center space-y-3">
+        <div className="bg-white border border-stone-300 p-5 sm:p-8 text-center space-y-3">
           <GraduationCap className="w-8 h-8 mx-auto text-stone-400" />
           <h2 className="font-serif text-2xl font-bold text-stone-900">
             {program.name} · Semester {semester} — curriculum to be notified
@@ -788,7 +788,7 @@ export const CoursesView: React.FC<MyCoursesNavProps & { selectedCourseId?: stri
           </div>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white border border-stone-300 p-8 text-center space-y-3">
+        <div className="bg-white border border-stone-300 p-5 sm:p-8 text-center space-y-3">
           <BookOpen className="w-8 h-8 mx-auto text-stone-400" />
           <h2 className="font-serif text-2xl font-bold text-stone-900">No courses match your smart search</h2>
           <p className="text-xs text-stone-600">
@@ -822,7 +822,7 @@ export const CoursesView: React.FC<MyCoursesNavProps & { selectedCourseId?: stri
             return (
               <div key={course.id} className="bg-white border border-stone-300 flex flex-col overflow-hidden">
                 <div className="relative">
-                  <PgCoverPhoto card={course} alt={`${course.title} cover`} className="w-full h-44" />
+                  <PgCoverPhoto card={course} alt={`${course.title} cover`} className="w-full h-36 sm:h-44" />
                   <span
                     className="absolute top-3 left-3 text-[11px] font-mono font-bold text-white px-2 py-1"
                     style={{ backgroundColor: course.accent }}
@@ -839,7 +839,7 @@ export const CoursesView: React.FC<MyCoursesNavProps & { selectedCourseId?: stri
                     </span>
                   )}
                 </div>
-                <div className="p-6 flex flex-col justify-between space-y-4 flex-1">
+                <div className="p-4 sm:p-6 flex flex-col justify-between space-y-4 flex-1">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono">
                       <span className="font-bold" style={{ color: course.accent }}>

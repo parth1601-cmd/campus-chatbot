@@ -169,6 +169,40 @@
   color: var(--ink-primary);
 }
 
+/* ---- Global responsive guards (mobile / tablet / PC) ---- */
+html {
+  overflow-x: clip;
+}
+
+body {
+  overflow-x: clip;
+}
+
+img, video, canvas, svg {
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+/* Prevent brutalist offset shadows from causing horizontal scroll on 320px phones */
+@media (max-width: 640px) {
+  .shadow-\[4px_4px_0px_\#141210\] {
+    box-shadow: 2px 2px 0px #141210 !important;
+  }
+  .shadow-\[3px_3px_0px_\#141210\] {
+    box-shadow: 2px 2px 0px #141210 !important;
+  }
+}
+
+/* Tablet: keep two-pane layouts usable at 768px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .max-w-\[1440px\] {
+    max-width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;

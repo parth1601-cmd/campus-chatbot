@@ -798,7 +798,7 @@ ${ASSIGNMENTS.map(
                 role="dialog"
                 aria-modal="true"
               >
-                <div className="bg-[#F5F0E6] border-2 border-stone-900 shadow-[6px_6px_0px_#141210] max-w-md w-full p-5 space-y-4">
+                <div className="bg-[#F5F0E6] border-2 border-stone-900 shadow-[6px_6px_0px_#141210] max-w-md w-full p-4 sm:p-5 space-y-4 max-h-[90dvh] overflow-y-auto">
                   <div className="border-b-2 border-stone-900 pb-2 flex items-center justify-between">
                     <div>
                       <span className="text-[10px] font-mono text-[#6E261A] font-bold uppercase">
@@ -861,7 +861,7 @@ ${ASSIGNMENTS.map(
                     })}
                   </div>
 
-                  <form onSubmit={handleAddInterest} className="flex gap-2 pt-2">
+                  <form onSubmit={handleAddInterest} className="flex flex-col sm:flex-row gap-2 pt-2">
                     <input
                       type="text"
                       value={newInterestInput}
@@ -959,7 +959,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
             <div className="text-xs font-mono text-stone-500">
               KRISTU JAYANTI INSTITUTE OF TECHNOLOGY · {MCA_PROGRAM_META.program.toUpperCase()} · {MCA_PROGRAM_META.semester.toUpperCase()}
             </div>
-            <h1 className="font-serif text-3xl font-bold text-stone-900">My Courses</h1>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">My Courses</h1>
             <div className="text-xs text-stone-600 mt-1">
               {MCA_PROGRAM_META.student} · {MCA_PROGRAM_META.subjectCount} subjects · {MCA_PROGRAM_META.totalCredits} credits · Official assessment syllabus
             </div>
@@ -980,7 +980,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
             return (
               <div key={course.id} className="bg-white border border-stone-300 flex flex-col overflow-hidden">
                 <div className="relative">
-                  <McaCoverPhoto card={course} alt={`${course.title} cover`} className="w-full h-44" />
+                  <McaCoverPhoto card={course} alt={`${course.title} cover`} className="w-full h-36 sm:h-44" />
                   <span
                     className="absolute top-3 left-3 text-[11px] font-mono font-bold text-white px-2 py-1"
                     style={{ backgroundColor: course.accent }}
@@ -991,7 +991,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
                     {units.length} UNITS · {topics} TOPICS
                   </span>
                 </div>
-                <div className="p-6 flex flex-col justify-between space-y-4 flex-1">
+                <div className="p-4 sm:p-6 flex flex-col justify-between space-y-4 flex-1">
                   <div className="space-y-2">
                     <h2 className="font-serif text-2xl font-bold text-stone-900 leading-tight">{course.title}</h2>
                     <div className="text-xs text-stone-600">
@@ -1073,7 +1073,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
 
       <div className="bg-white border border-stone-300 overflow-hidden">
         <div className="relative">
-          <McaCoverPhoto card={selectedCourse} alt={`${selectedCourse.title} banner`} className="w-full h-52" />
+          <McaCoverPhoto card={selectedCourse} alt={`${selectedCourse.title} banner`} className="w-full h-40 sm:h-52" />
           <span
             className="absolute top-4 left-4 text-xs font-mono font-bold text-white px-2.5 py-1"
             style={{ backgroundColor: selectedCourse.accent }}
@@ -1081,12 +1081,12 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
             {selectedCourse.code} · {selectedCourse.credits} CREDITS
           </span>
         </div>
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <div className="lg:col-span-8 space-y-2">
             <div className="text-xs font-mono" style={{ color: selectedCourse.accent }}>
               {selectedCourse.code} · {selectedCourse.department.toUpperCase()} · {MCA_PROGRAM_META.semester.toUpperCase()}
             </div>
-            <h1 className="font-serif text-3xl font-bold text-stone-900">
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
               {selectedCourse.title}
             </h1>
             <div className="text-xs text-stone-600">
@@ -1296,7 +1296,7 @@ export const CoursesView: React.FC<SharedNavProps & { selectedCourseId?: string 
       ) : activeTab === 'Grades' ? (
         <GradesView onNavigate={onNavigate} onAskAI={onAskAI} onShowToast={onShowToast} />
       ) : (
-        <div className="bg-white border border-stone-300 p-6 space-y-4">
+        <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
           <h3 className="font-serif text-xl font-bold text-stone-900">
             Course Seminar Discussions · {selectedCourse.code}
           </h3>
@@ -1375,12 +1375,12 @@ export const AITutorView: React.FC<SharedNavProps> = ({ onShowToast }) => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-stone-300 p-6 flex flex-wrap items-center justify-between gap-6">
+      <div className="bg-white border border-stone-300 p-4 sm:p-6 flex flex-wrap items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="text-xs font-mono text-[#1E3A8A]">
             SOCRATIC AI TUTOR · CONTEXT-AWARE RAG LEARNING
           </div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
             Topic: {topic}
           </h1>
           <div className="text-xs text-stone-600">
@@ -1388,7 +1388,7 @@ export const AITutorView: React.FC<SharedNavProps> = ({ onShowToast }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <div>
             <div className="text-xs font-mono text-stone-500">UNDERSTANDING</div>
             <div className="font-mono text-2xl font-bold text-[#1E3A8A] tabular-nums">
@@ -1414,7 +1414,7 @@ export const AITutorView: React.FC<SharedNavProps> = ({ onShowToast }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-4 gap-3">
         <button
           type="button"
           onClick={() => invokeTutorAction('explain', 'Explain differently')}
@@ -1449,7 +1449,7 @@ export const AITutorView: React.FC<SharedNavProps> = ({ onShowToast }) => {
         </button>
       </div>
 
-      <div className="bg-white border border-stone-300 p-6 space-y-4">
+      <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
         <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
           {history.map((entry, idx) => (
             <div
@@ -1481,7 +1481,7 @@ export const AITutorView: React.FC<SharedNavProps> = ({ onShowToast }) => {
             invokeTutorAction('custom', customQuestion);
             setCustomQuestion('');
           }}
-          className="flex gap-2 pt-3 border-t border-stone-200"
+          className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-stone-200"
         >
           <input
             type="text"
@@ -1523,12 +1523,12 @@ export const LiveLearningView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
           <div className="text-xs font-mono text-[#1E3A8A]">
             KRISTU JAYANTI SYNCHRONOUS & ARCHIVAL MEDIA STUDIO
           </div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
             Live Learning & Lecture VOD
           </h1>
         </div>
 
-        <div className="flex gap-1 p-1 bg-stone-200/70 border border-stone-300">
+        <div className="flex gap-1 p-1 bg-stone-200/70 border border-stone-300 max-w-full overflow-x-auto">
           <button
             type="button"
             onClick={() => setMode('live')}
@@ -1562,7 +1562,7 @@ export const LiveLearningView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
               </div>
             </div>
 
-            <div className="relative bg-stone-900 text-white h-80 flex flex-col justify-between p-6 overflow-hidden">
+            <div className="relative bg-stone-900 text-white aspect-video min-h-[220px] sm:min-h-[320px] flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
               <img
                 src={ASSETS.courseCs}
                 alt="Live Whiteboard Stream"
@@ -1697,7 +1697,7 @@ export const LiveLearningView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 bg-white border border-stone-300 p-6 space-y-4">
+          <div className="lg:col-span-8 bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
             <div className="flex items-center justify-between text-xs font-mono text-stone-500">
               <span>CS 201 ARCHIVAL LECTURE 3 · 55 MIN VOD</span>
               <span>1080P · MULTI-TRACK CAPTIONS</span>
@@ -1706,7 +1706,7 @@ export const LiveLearningView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
               Binary Search Trees, In-Order Traversal & Structural Induction
             </h2>
 
-            <div className="bg-stone-900 text-white p-8 flex flex-col justify-between h-64 relative overflow-hidden">
+            <div className="bg-stone-900 text-white p-5 sm:p-8 flex flex-col justify-between h-64 relative overflow-hidden">
               <img
                 src={ASSETS.courseCs}
                 alt="Lecture VOD Frame"
@@ -1740,7 +1740,7 @@ export const LiveLearningView: React.FC<SharedNavProps> = ({ onAskAI, onShowToas
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
               {[
                 { time: '00:00', title: '01. BST Invariant' },
                 { time: '14:20', title: '02. Recursive Insert' },
@@ -1843,7 +1843,7 @@ export const AssignmentsView: React.FC<SharedNavProps> = ({ onNavigate, onShowTo
       <div className="border-b border-stone-300 pb-4 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="text-xs font-mono text-stone-500">DELIVERABLES & AUTOGRADER QUEUE</div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">Assignments</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">Assignments</h1>
         </div>
 
         <div className="flex flex-wrap gap-1 p-1 bg-stone-200/70 border border-stone-300">
@@ -1936,11 +1936,11 @@ export const CalendarView: React.FC<SharedNavProps> = ({ onAskAI, onShowToast })
       <div className="border-b border-stone-300 pb-4 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="text-xs font-mono text-stone-500">KRISTU JAYANTI REGISTRAR TIMETABLE · OCTOBER 2026</div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">Academic Calendar</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">Academic Calendar</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex gap-1 p-1 bg-stone-200/70 border border-stone-300">
+          <div className="flex gap-1 p-1 bg-stone-200/70 border border-stone-300 max-w-full overflow-x-auto">
             {(['Month', 'Week', 'Day'] as const).map((m) => (
               <button
                 key={m}
@@ -1982,7 +1982,7 @@ export const CalendarView: React.FC<SharedNavProps> = ({ onAskAI, onShowToast })
         ))}
       </div>
 
-      <div className="bg-white border border-stone-300 p-6 space-y-4">
+      <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
         <div className="flex items-center justify-between border-b border-stone-200 pb-3">
           <h2 className="font-serif text-xl font-bold text-stone-900">
             October 2026 · {viewMode} View
@@ -2117,7 +2117,7 @@ export const AcademicProgressView: React.FC<SharedNavProps> = ({ onAskAI, onShow
 
       {/* Graduation Progress & Category Ledger */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-5 bg-[#F5F0E6] border-2 border-stone-900 p-6 flex flex-col items-center justify-center text-center space-y-4 shadow-[4px_4px_0px_#141210]">
+        <div className="lg:col-span-5 bg-[#F5F0E6] border-2 border-stone-900 p-4 sm:p-6 flex flex-col items-center justify-center text-center space-y-4 shadow-[4px_4px_0px_#141210]">
           <div className="relative w-48 h-48 flex items-center justify-center">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
               <circle cx="60" cy="60" r="50" fill="none" stroke="#DFD5BE" strokeWidth="12" />
@@ -2153,7 +2153,7 @@ export const AcademicProgressView: React.FC<SharedNavProps> = ({ onAskAI, onShow
           </div>
         </div>
 
-        <div className="lg:col-span-7 bg-[#F5F0E6] border-2 border-stone-900 p-6 space-y-5 shadow-[4px_4px_0px_#141210]">
+        <div className="lg:col-span-7 bg-[#F5F0E6] border-2 border-stone-900 p-4 sm:p-6 space-y-5 shadow-[4px_4px_0px_#141210]">
           <div className="flex items-center justify-between border-b-2 border-stone-900 pb-2">
             <h2
               style={{ fontFamily: 'var(--font-serif)' }}
@@ -2206,7 +2206,7 @@ export const AcademicProgressView: React.FC<SharedNavProps> = ({ onAskAI, onShow
       {/* =========================================================================
           PERSONALIZED COURSE RECOMMENDATION ENGINE SECTION (CORE SPEC IMPLEMENTATION)
          ========================================================================= */}
-      <section className="bg-[#F5F0E6] border-2 border-stone-900 p-6 space-y-6 shadow-[4px_4px_0px_#141210]">
+      <section className="bg-[#F5F0E6] border-2 border-stone-900 p-4 sm:p-6 space-y-6 shadow-[4px_4px_0px_#141210]">
         <div className="border-b-2 border-stone-900 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#6E261A]">
@@ -2295,7 +2295,7 @@ export const AcademicProgressView: React.FC<SharedNavProps> = ({ onAskAI, onShow
             })}
           </div>
 
-          <form onSubmit={handleAddInterest} className="flex gap-2 pt-1">
+          <form onSubmit={handleAddInterest} className="flex flex-col sm:flex-row gap-2 pt-1">
             <input
               type="text"
               value={newInterestInput}
@@ -2471,7 +2471,7 @@ export const GradesView: React.FC<SharedNavProps> = () => {
       <div className="border-b border-stone-300 pb-4 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="text-xs font-mono text-stone-500">OFFICIAL TRANSCRIPT & ASSESSMENT RECORD</div>
-          <h1 className="font-serif text-3xl font-bold text-stone-900">Grades & Standing</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">Grades & Standing</h1>
         </div>
         <div className="font-mono text-sm text-stone-800 tabular-nums">
           CUMULATIVE GPA: <span className="font-bold text-[#1E3A8A]">3.82 / 4.00</span> · DEAN’S HONOURS LIST
@@ -2500,7 +2500,7 @@ export const GradesView: React.FC<SharedNavProps> = () => {
         ))}
       </div>
 
-      <div className="bg-white border border-stone-300 p-6 space-y-4">
+      <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 pb-3">
           <div>
             <h2 className="font-serif text-xl font-bold text-stone-900">
@@ -2514,7 +2514,7 @@ export const GradesView: React.FC<SharedNavProps> = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full min-w-[640px] text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-stone-300 text-stone-500 font-mono">
                 <th className="py-2.5 pr-4">ASSESSMENT ITEM</th>

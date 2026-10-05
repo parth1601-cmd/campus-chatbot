@@ -493,12 +493,12 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
   };
 
   return (
-    <div className="h-[calc(100vh-140px)] min-h-[600px] flex border-2 border-[#141210] bg-[#FBF9F5] shadow-[4px_4px_0px_#141210] overflow-hidden">
+    <div className="h-[calc(100dvh-220px)] sm:h-[calc(100vh-140px)] min-h-[500px] sm:min-h-[600px] flex flex-col md:flex-row border-2 border-[#141210] bg-[#FBF9F5] shadow-[4px_4px_0px_#141210] overflow-hidden relative">
       {/* ================================================================
           CONVERSATION SIDEBAR
          ================================================================ */}
       {isSidebarOpen && (
-        <aside className="w-64 sm:w-72 bg-[#EFE9DD] border-r-2 border-[#141210] flex flex-col justify-between shrink-0">
+        <aside className="absolute md:static z-20 h-full md:h-auto w-64 sm:w-72 max-w-[85vw] bg-[#EFE9DD] border-r-2 border-[#141210] flex flex-col justify-between shrink-0 shadow-[4px_0_0_rgba(0,0,0,0.15)] md:shadow-none">
           {/* Sidebar Top: New Chat Button & Conversation List */}
           <div className="p-3 flex-1 flex flex-col overflow-hidden">
             <button
@@ -583,7 +583,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
          ================================================================ */}
       <section className="flex-1 flex flex-col justify-between bg-white min-w-0">
         {/* Top Chat Header */}
-        <header className="px-4 py-3 bg-[#EAE2D3] border-b-2 border-[#141210] flex items-center justify-between gap-3">
+        <header className="px-3 sm:px-4 py-3 bg-[#EAE2D3] border-b-2 border-[#141210] flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
@@ -628,13 +628,13 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
               className="px-2.5 py-1 text-xs font-mono font-bold text-white bg-[#1E3A8A] hover:bg-[#141210] border border-[#141210] transition-colors cursor-pointer flex items-center gap-1"
             >
               <GraduationCap className="w-3 h-3" />
-              <span>Admissions</span>
+              <span className="hidden min-[400px]:inline">Admissions</span>
             </button>
           </div>
         </header>
 
         {/* Message Viewport */}
-        <div className="flex-1 p-4 sm:p-6 space-y-4 overflow-y-auto">
+        <div className="flex-1 p-3 sm:p-6 space-y-4 overflow-y-auto min-w-0">
           {activeConversation.messages.length === 0 ? (
             /* ================================================================
                EMPTY STATE: WELCOME & PROMPT CHIPS
@@ -700,7 +700,7 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
                     )}
 
                     <div
-                      className={`max-w-[85%] sm:max-w-[75%] rounded-lg p-3.5 sm:p-4 text-sm leading-relaxed ${
+                      className={`max-w-[calc(100%-3rem)] sm:max-w-[75%] min-w-0 break-words rounded-lg p-3 sm:p-4 text-sm leading-relaxed ${
                         isUser
                           ? 'bg-[#141210] text-white border border-[#141210] shadow-[2px_2px_0px_#141210]'
                           : 'bg-[#FBF9F5] text-stone-900 border border-stone-300 shadow-[2px_2px_0px_rgba(0,0,0,0.05)]'
@@ -790,15 +790,15 @@ export const AICampusAssistant: React.FC<AICampusAssistantProps> = ({
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask to learn, solve, quiz or revise — DSA, Python, Java/Web, Maths, ADBMS..."
-              className="flex-1 px-4 py-2.5 text-sm bg-white border-2 border-[#141210] placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] shadow-[2px_2px_0px_#141210]"
+              placeholder="Ask to learn, solve, quiz or revise…"
+              className="min-w-0 flex-1 px-3 sm:px-4 py-2.5 text-sm bg-white border-2 border-[#141210] placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-[#1E3A8A] shadow-[2px_2px_0px_#141210]"
               disabled={isLoading}
               autoFocus
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="px-5 py-2.5 bg-[#141210] hover:bg-[#1E3A8A] text-white text-xs font-mono uppercase tracking-wider font-bold flex items-center gap-1.5 border-2 border-[#141210] transition-colors cursor-pointer disabled:opacity-50 shadow-[2px_2px_0px_#141210]"
+              className="shrink-0 px-3 sm:px-5 py-2.5 bg-[#141210] hover:bg-[#1E3A8A] text-white text-xs font-mono uppercase tracking-wider font-bold flex items-center gap-1.5 border-2 border-[#141210] transition-colors cursor-pointer disabled:opacity-50 shadow-[2px_2px_0px_#141210]"
               title="Send message"
             >
               <span>Send</span>

@@ -51,13 +51,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
       </header>
 
       {/* Main Two-Column Broadsheet Authentication Layout */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
         {/* Left Column: Editorial Lead Feature */}
         <div className="lg:col-span-7 space-y-6 border-b lg:border-b-0 lg:border-r border-stone-300 pb-8 lg:pb-0 lg:pr-10">
           <div className="text-xs font-mono uppercase tracking-widest text-[#1E3A8A] font-bold">
             THE KRISTU CHRONICLE · ENTERPRISE AI EDITION
           </div>
-          <h1 className="font-serif text-4xl lg:text-5xl font-semibold text-stone-900 leading-tight">
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-semibold text-stone-900 leading-tight">
             Your entire university, powered by verified intelligence.
           </h1>
           <p className="text-base text-stone-700 leading-relaxed max-w-2xl">
@@ -72,14 +72,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
               src={ASSETS.campusQuad}
               alt="Kristu Jayanti Institute of Technology Campus in Autumn Morning Light"
               referrerPolicy="no-referrer"
-              className="w-full h-64 object-cover"
+              className="w-full h-48 sm:h-64 object-cover"
             />
             <div className="p-3 bg-white border-t border-stone-200 text-xs font-serif italic text-stone-600">
               Fig. 1 — Morning light across the Kristu Jayanti Institute of Technology Campus and Turing Hall. All academic services synchronized via CampusAI RAG Index.
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 pt-2 border-t border-stone-300 text-xs text-stone-600">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2 border-t border-stone-300 text-xs text-stone-600">
             <div>
               <div className="font-mono font-semibold text-stone-900 text-sm tabular-nums">100% Grounded</div>
               <div>Official KJIT Syllabi & Handbook</div>
@@ -96,7 +96,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
         </div>
 
         {/* Right Column: Login & Realistic State Simulator */}
-        <div className="lg:col-span-5 bg-white border border-stone-300 p-8 space-y-6">
+        <div className="lg:col-span-5 bg-white border border-stone-300 p-5 sm:p-8 space-y-6 min-w-0">
           <div className="border-b border-stone-200 pb-4">
             <div className="text-xs font-mono text-stone-500">KRISTU JAYANTI CENTRAL AUTHENTICATION</div>
             <h2 className="font-serif text-3xl font-semibold text-stone-900 mt-1">
@@ -273,7 +273,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
               />
             </div>
 
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
               <label className="flex items-center gap-2 text-stone-700 cursor-pointer">
                 <input
                   type="checkbox"

@@ -116,7 +116,7 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
       {/* ================================================================
           SELECTED PROGRAMME DETAILED CARD
          ================================================================ */}
-      <div className="p-6 bg-white border-2 border-[#141210] shadow-[4px_4px_0px_#141210] space-y-6">
+      <div className="p-4 sm:p-6 bg-white border-2 border-[#141210] shadow-[4px_4px_0px_#141210] space-y-6 min-w-0">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-stone-300 pb-4">
           <div>
             <div className="inline-block px-2 py-0.5 bg-amber-100 border border-amber-800 text-amber-950 text-xs font-mono font-bold uppercase mb-2">
@@ -130,7 +130,7 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => onAskAI(`What are the eligibility requirements and fees for ${selectedProgramme.title}?`)}
@@ -177,8 +177,8 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
             <span>Fee Structure (2026 Batch)</span>
           </div>
 
-          <div className="overflow-x-auto ml-7">
-            <table className="w-full text-left border-collapse border border-stone-300 text-xs">
+          <div className="overflow-x-auto ml-0 sm:ml-7 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full min-w-[560px] text-left border-collapse border border-stone-300 text-xs">
               <thead>
                 <tr className="bg-[#EAE2D3] border-b border-stone-400 font-mono font-bold">
                   <th className="p-3 border-r border-stone-300">Year</th>
@@ -208,7 +208,7 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
         </div>
 
         {/* Programme Highlights */}
-        <div className="space-y-2 ml-7">
+        <div className="space-y-2 ml-0 sm:ml-7">
           <div className="text-xs font-mono font-bold uppercase text-stone-700">Key Focus Areas:</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {selectedProgramme.highlights.map((h, i) => (
@@ -224,7 +224,7 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
       {/* ================================================================
           ADDITIONAL INSTITUTIONAL FEES SCHEDULE
          ================================================================ */}
-      <div className="p-6 bg-[#FAF8F5] border-2 border-[#141210] space-y-4">
+      <div className="p-4 sm:p-6 bg-[#FAF8F5] border-2 border-[#141210] space-y-4 min-w-0">
         <div className="flex items-center justify-between border-b border-stone-300 pb-2">
           <div className="flex items-center gap-2 font-serif font-bold text-lg text-stone-950">
             <Building className="w-5 h-5 text-[#1E3A8A]" />
@@ -234,7 +234,7 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse border border-stone-300 text-xs">
+          <table className="w-full min-w-[640px] text-left border-collapse border border-stone-300 text-xs">
             <thead>
               <tr className="bg-[#EAE2D3] border-b border-stone-400 font-mono font-bold">
                 <th className="p-2.5 border-r border-stone-300">Candidate Category</th>
@@ -275,7 +275,7 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
       {/* ================================================================
           WHY INSTITUTE OF TECHNOLOGY AT KRISTU JAYANTI
          ================================================================ */}
-      <div className="p-6 bg-white border-2 border-[#141210] shadow-[3px_3px_0px_#141210] space-y-4">
+      <div className="p-4 sm:p-6 bg-white border-2 border-[#141210] shadow-[3px_3px_0px_#141210] space-y-4 min-w-0">
         <h3 className="font-serif text-xl font-bold text-stone-950 border-b border-stone-300 pb-2 flex items-center gap-2">
           <Award className="w-5 h-5 text-[#1E3A8A]" />
           <span>Why Institute of Technology at Kristu Jayanti University?</span>
@@ -318,7 +318,7 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
       {/* ================================================================
           DISTINGUISHED FACULTY & MENTORS SHOWCASE
          ================================================================ */}
-      <div className="p-6 bg-white border-2 border-[#141210] shadow-[3px_3px_0px_#141210] space-y-4">
+      <div className="p-4 sm:p-6 bg-white border-2 border-[#141210] shadow-[3px_3px_0px_#141210] space-y-4 min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-300 pb-2">
           <div>
             <h3 className="font-serif text-xl font-bold text-stone-950 flex items-center gap-2">
@@ -383,7 +383,7 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
       {/* ================================================================
           CONTACT & ENQUIRIES FOOTER
          ================================================================ */}
-      <footer className="p-6 bg-[#141210] text-stone-200 border-2 border-[#141210] space-y-4">
+      <footer className="p-4 sm:p-6 bg-[#141210] text-stone-200 border-2 border-[#141210] space-y-4 min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h4 className="font-serif text-lg font-bold text-white">
@@ -394,7 +394,7 @@ export const AdmissionsView: React.FC<AdmissionsViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => onAskAI('How can I contact Kristu Jayanti admissions office?')}

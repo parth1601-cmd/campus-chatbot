@@ -400,7 +400,7 @@ export const FacultyPortalView: React.FC<PortalProps> = ({ onShowToast, onNaviga
               <div className="text-[11px] font-mono uppercase tracking-widest text-[#1E3A8A] font-bold">
                 KRISTU JAYANTI INSTITUTE OF TECHNOLOGY · FACULTY LOGIN
               </div>
-              <h1 className="font-serif text-3xl font-extrabold text-stone-950">
+              <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-stone-950">
                 Teacher & Study Management Console
               </h1>
             </div>
@@ -475,7 +475,7 @@ export const FacultyPortalView: React.FC<PortalProps> = ({ onShowToast, onNaviga
           {/* Action Toolbar */}
           <div className="p-4 bg-white border-2 border-stone-900 shadow-[3px_3px_0px_#141210] flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="relative w-64">
+              <div className="relative w-full sm:w-64">
                 <Search className="w-3.5 h-3.5 text-stone-500 absolute left-2.5 top-2.5" />
                 <input
                   type="text"
@@ -549,7 +549,7 @@ export const FacultyPortalView: React.FC<PortalProps> = ({ onShowToast, onNaviga
 
           {/* Add Teacher Modal Form */}
           {isAddingFaculty && (
-            <div className="p-6 bg-[#FAF8F5] border-2 border-[#1E3A8A] shadow-[4px_4px_0px_#1E3A8A] space-y-4">
+            <div className="p-4 sm:p-6 bg-[#FAF8F5] border-2 border-[#1E3A8A] shadow-[4px_4px_0px_#1E3A8A] space-y-4">
               <div className="flex items-center justify-between border-b border-stone-300 pb-2">
                 <h3 className="font-serif text-xl font-bold text-stone-950 flex items-center gap-2">
                   <GraduationCap className="w-5 h-5 text-[#1E3A8A]" />
@@ -721,7 +721,7 @@ export const FacultyPortalView: React.FC<PortalProps> = ({ onShowToast, onNaviga
 
           {/* Edit Teacher Modal / Drawer */}
           {editingFaculty && (
-            <div className="p-6 bg-[#FAF8F5] border-2 border-[#9A3412] shadow-[4px_4px_0px_#9A3412] space-y-4">
+            <div className="p-4 sm:p-6 bg-[#FAF8F5] border-2 border-[#9A3412] shadow-[4px_4px_0px_#9A3412] space-y-4">
               <div className="flex items-center justify-between border-b border-stone-300 pb-2">
                 <h3 className="font-serif text-xl font-bold text-stone-950 flex items-center gap-2">
                   <Edit2 className="w-5 h-5 text-[#9A3412]" />
@@ -766,7 +766,7 @@ export const FacultyPortalView: React.FC<PortalProps> = ({ onShowToast, onNaviga
                     <span className="text-[10px] font-mono text-stone-600 uppercase font-bold block">
                       Kristu Jayanti Photo Presets:
                     </span>
-                    <div className="grid grid-cols-2 gap-1 text-[10px] font-mono">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[10px] font-mono">
                       {OFFICIAL_PHOTO_PRESETS.map((p) => (
                         <button
                           key={p.name}
@@ -1244,7 +1244,7 @@ export const FacultyPortalView: React.FC<PortalProps> = ({ onShowToast, onNaviga
       {activeTab === 'telemetry' && (
         <div className="space-y-6 animate-fadeIn">
           {/* Top Faculty Metrics */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {[
               { label: 'Active Courses', value: `${coursesList.length} Courses`, sub: 'CS 201 · CS 310 · MCA' },
               { label: 'Total Students', value: '218', sub: '124 in CS 201' },
@@ -1262,7 +1262,7 @@ export const FacultyPortalView: React.FC<PortalProps> = ({ onShowToast, onNaviga
 
           {/* Actionable Faculty AI Insights */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-7 bg-white border border-stone-300 p-6 space-y-4">
+            <div className="lg:col-span-7 bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
               <div className="border-b border-stone-200 pb-3 flex items-center justify-between">
                 <div>
                   <div className="text-xs font-mono text-[#9A3412]">PEDAGOGICAL TELEMETRY & AI INSIGHTS</div>
@@ -1309,7 +1309,7 @@ export const FacultyPortalView: React.FC<PortalProps> = ({ onShowToast, onNaviga
 
             {/* Right 5 Cols: AI Tutor Management & Course Announcements */}
             <div className="lg:col-span-5 space-y-6">
-              <div className="bg-white border border-stone-300 p-6 space-y-4">
+              <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
                 <div className="text-xs font-mono text-[#1E3A8A]">AI TUTOR GUARDRAILS</div>
                 <h3 className="font-serif text-xl font-bold text-stone-900">
                   Course AI Tutor Configuration
@@ -1333,7 +1333,7 @@ export const FacultyPortalView: React.FC<PortalProps> = ({ onShowToast, onNaviga
                 </div>
               </div>
 
-              <div className="bg-white border border-stone-300 p-6 space-y-4">
+              <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
                 <div className="text-xs font-mono text-stone-500">BROADCAST TO STUDENTS</div>
                 <h3 className="font-serif text-xl font-bold text-stone-900">
                   Post Course Announcement
@@ -1736,7 +1736,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
             {[
               { label: 'Total Students', val: '14,820', note: '98.4% Enrolled' },
               { label: 'Active AI Users', val: '13,490', note: '91.0% Adoption' },
@@ -1755,7 +1755,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
 
           {/* Analytics Bar Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white border border-stone-300 p-6 space-y-4">
+            <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
               <h3 className="font-serif text-lg font-bold text-stone-900 border-b border-stone-200 pb-2">
                 AI Usage & Support Deflection by Department
               </h3>
@@ -1779,7 +1779,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
               ))}
             </div>
 
-            <div className="bg-white border border-stone-300 p-6 space-y-4">
+            <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
               <h3 className="font-serif text-lg font-bold text-stone-900 border-b border-stone-200 pb-2">
                 Azure AI Foundry & Gemini Hybrid Deployments
               </h3>
@@ -1809,7 +1809,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
       {/* AI Administration & RAG Knowledge Base */}
       {currentView === 'admin-ai' && (
         <div className="space-y-6">
-          <div className="bg-white border border-stone-300 p-6 space-y-4">
+          <div className="bg-white border border-stone-300 p-4 sm:p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 pb-3">
               <div>
                 <div className="text-xs font-mono text-[#1E3A8A]">RAG VECTOR INDEX & PROMPT VERSIONS</div>
@@ -1823,7 +1823,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs tabular-nums">
+              <table className="w-full min-w-[640px] text-left border-collapse text-xs tabular-nums">
                 <thead>
                   <tr className="border-b border-stone-300 text-stone-500 font-mono">
                     <th className="py-2.5">KNOWLEDGE SOURCE</th>
@@ -1924,7 +1924,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
       {/* Observability */}
       {currentView === 'admin-observability' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {[
               { sys: 'AI Service', state: 'Operational', latency: '410ms P95' },
               { sys: 'RAG Index', state: 'Operational', latency: '68ms Query' },
@@ -1943,7 +1943,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
             ))}
           </div>
 
-          <div className="bg-white border border-stone-300 p-6 grid grid-cols-2 lg:grid-cols-4 gap-6 tabular-nums">
+          <div className="bg-white border border-stone-300 p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 tabular-nums">
             <div>
               <div className="text-xs font-mono text-stone-500">AI RESPONSE LATENCY</div>
               <div className="font-mono text-2xl font-bold text-stone-900">0.41s</div>
@@ -2441,7 +2441,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
                     <span className="text-[10px] font-mono text-stone-500 font-bold uppercase block mb-1.5">
                       Select Official University Campus Photo Preset:
                     </span>
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       {OFFICIAL_CAMPUS_PHOTO_PRESETS.map((preset) => (
                         <button
                           key={preset.title}
@@ -2859,7 +2859,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="block text-xs font-mono font-bold text-stone-700 uppercase mb-1">
                           Bulletin Tag
@@ -2976,7 +2976,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="block text-xs font-mono font-bold text-stone-700 uppercase mb-1">
                           Wire Title
@@ -3149,7 +3149,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[10px] font-mono uppercase text-stone-600 font-bold mb-1">
                           Action Button Label
@@ -3307,7 +3307,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
               {/* Edit Faculty Modal */}
               {adminEditingFaculty && (
                 <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-                  <div className="bg-white border-2 border-[#141210] p-6 max-w-lg w-full space-y-4">
+                  <div className="bg-white border-2 border-[#141210] p-4 sm:p-6 max-w-lg w-full space-y-4 max-h-[90dvh] overflow-y-auto">
                     <div className="flex items-center justify-between border-b pb-2">
                       <h4 className="font-serif font-bold text-lg">Edit {adminEditingFaculty.name}</h4>
                       <button type="button" onClick={() => setAdminEditingFaculty(null)} className="text-xs font-mono">✕</button>
@@ -3338,7 +3338,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
                           ))}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <label className="block text-xs font-mono font-bold uppercase mb-1">Designation</label>
                           <input
@@ -3467,7 +3467,7 @@ export const AdminPortalView: React.FC<PortalProps> = ({
                 {adminIsAddingModule && (
                   <div className="p-4 bg-[#FAF8F5] border-2 border-[#1E3A8A] space-y-3">
                     <div className="font-serif font-bold text-sm">Add New Syllabus Module</div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[10px] font-mono uppercase text-stone-600 mb-1">Week (e.g. Week 7)</label>
                         <input
