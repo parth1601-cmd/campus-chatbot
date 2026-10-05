@@ -1,0 +1,5 @@
+[build.environment]
+  # These variables hold non-sensitive config (Azure region, model deployment
+  # names, a placeholder key) whose values also appear as plain strings in the
+  # source/UI. Real API keys remain scanned.
+  SECRETS_SCAN_OMIT_KEYS = "SPEECH_REGION,TEXT_MODEL_DEPLOYMENT,VISION_MODEL_DEPLOYMENT,IMAGE_MODEL_DEPLOYMENT,GEMINI_API_KEY"
